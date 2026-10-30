@@ -61,6 +61,8 @@
       { key: 'hardware', name: 'outside: hardware', incidents: V(168, S.a9), downtimeH: V(556.306666666667, S.a9), shareInc: V(0.0786148806738418, S.a9), shareHours: V(0.32172572001388, S.a9), opRemoteH: V(35.87, S.a9) },
       { key: 'safety', name: 'outside: safety', incidents: V(171, S.a9), downtimeH: V(113.435, S.a9), shareInc: V(0.0800187178287319, S.a9), shareHours: V(0.0656022284766935, S.a9), opRemoteH: V(54.9133333333333, S.a9) }
     ],
+    /* stops where a picture of the scene tells what is wrong; the only codes a fixed camera can help with (added after review) */
+    cameraCodes: ['ERR_DOCKING_ALIGNMENT_TIMEOUT', 'ERR_PALLET_POCKET_NOT_DETECTED', 'ERR_OBSTACLE_PERSISTENT_BLOCK'],
     codeLevel: {
       ERR_DOCKING_ALIGNMENT_TIMEOUT: '1', ERR_PALLET_POCKET_NOT_DETECTED: '1', ERR_OBSTACLE_PERSISTENT_BLOCK: '1',
       ERR_PATH_PLANNING_DEADLOCK: '1', ERR_INTERSECTION_GRIDLOCK_TIMEOUT: '1', ERR_LIDAR_DIRT_OBSCURATION: '1',
@@ -169,6 +171,7 @@
       agentCan: { v: 0.5, src: S.assumed, min: 0.2, max: 0.8, step: 0.05, unit: '%', note: 'chance the recovery agent can propose a fix for a level-1 incident that today needs an operator or remote person' },
       gatePass: { v: 0.85, src: S.assumed, min: 0.6, max: 0.95, step: 0.05, unit: '%', note: 'gate pass rate for those proposals' },
       approvalWaitMin: V(3, S.assumed, 'a person approves a failed proposal: 3 min wait plus 1 click'),
+      camUplift: { v: 0.15, src: S.estimate, min: 0, max: 0.3, step: 0.05, unit: '%', note: 'added after review: extra chance the recovery agent can propose a fix for a camera-dependent stop (docking, pallet pocket, obstacle) when a fixed camera also sees it. Not sized in the case; an author estimate for play' },
       triageSaving: { v: 0.4, src: S.assumed, min: 0, max: 0.6, step: 0.05, unit: '%', note: 'engineering-hour saving from triage on no-fault-found tickets' },
       palletsPerMovingHour: V(2.24, S.assumed, 'derived: 3,868 moves lost / 1,729 downtime hours (Analysis 1); the rate itself is assumed'),
       vlmThreshold: V(0.70, S.assumed, 'below it a person decides'),

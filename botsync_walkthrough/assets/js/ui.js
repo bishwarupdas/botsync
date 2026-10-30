@@ -454,7 +454,7 @@
     $('#map-title').dataset.robots = String(wh.robots); $('#map-title').dataset.stations = String(wh.stations.length);
     $('#map-note').innerHTML = App.mode === 'game' ? 'time-lapse of the simulated week' : 'demo speed: 1 s = ' + CONFIG.simSecondsPerScreenSecond + ' simulated s at 1x; stops far more often than in the data';
     $('#map-foot').innerHTML = 'Aisle widths to scale (min ' + N(site.aisleMin, 'raw', { suffix: ' m' }) + '), lengths schematic. Chargers: 1 per ' + N(D.assumed.robotsPerCharger, 'int', { noTag: true }) + ' robots ' + tag('assumed') + ' (no charger inventory in the data).' + (wh.glare ? ' Glare on Bays 1-4, 14:00-17:00 (Planted_patterns tab).' : '');
-    $('#strip').hidden = App.mode === 'game';
+    $('#strip').hidden = App.mode === 'game'; $('#game-logic').hidden = App.mode !== 'game';
     voiceLayout();
     sizeMap(); renderStrip();
   }
@@ -549,18 +549,20 @@
   }
   UI.sliderHtml = sliderHtml;
   var FMT = {
-    swapTime: function (v) { return (+v).toFixed(0) + ' min'; }, spares: function (v) { return (+v).toFixed(2) + ' per robot'; }, operators: function (v) { return (+v).toFixed(0); },
+    swapTime: function (v) { return (+v).toFixed(0) + ' min'; }, spares: function (v) { return (+v).toFixed(2) + ' per robot'; }, operators: function (v) { return (+v).toFixed(0); }, camUplift: function (v) { return '+' + Math.round(v * 100) + ' points'; },
     agentCan: function (v) { return Math.round(v * 100) + '%'; }, gatePass: function (v) { return Math.round(v * 100) + '%'; }, headroom: function (v) { return Math.round(v * 100) + '%'; }, triageSaving: function (v) { return Math.round(v * 100) + '%'; }
   };
   UI.FMT = FMT;
-  var PDEF = { swapTime: D.assumed.swapTimeMin, spares: D.assumed.sparePacksPerRobot, operators: D.assumed.swapOperators, agentCan: D.assumed.agentCan, gatePass: D.assumed.gatePass, headroom: D.assumed.headroom, triageSaving: D.assumed.triageSaving };
+  var PDEF = { swapTime: D.assumed.swapTimeMin, spares: D.assumed.sparePacksPerRobot, operators: D.assumed.swapOperators, agentCan: D.assumed.agentCan, gatePass: D.assumed.gatePass, headroom: D.assumed.headroom, triageSaving: D.assumed.triageSaving, camUplift: D.assumed.camUplift };
   UI.PDEF = PDEF;
   function switchHtml(key, label, on, disabled, note) {
-    return '<button class="switch" data-policy="' + key + '" aria-pressed="' + (!!on) + '"' + (disabled ? ' disabled' : '') + '><span class="track"><span class="knob"></span></span>' + esc(label) + '</button>' + (note ? '<div class="small dim">' + esc(note) + '</div>' : '');
+    // "Name (what it means)": the bracket explains the switch in plain words, in a lighter style
+    var k = label.indexOf(' ('), name = k > 0 ? label.slice(0, k) : label, why = k > 0 ? label.slice(k + 1) : '';
+    return '<button class="switch" data-policy="' + key + '" aria-pressed="' + (!!on) + '"' + (disabled ? ' disabled' : '') + '><span class="track"><span class="knob"></span></span><span class="sw-label"><span class="sw-name">' + esc(name) + '</span>' + (why ? ' <span class="sw-why">' + esc(why) + '</span>' : '') + '</span></button>' + (note ? '<div class="small dim">' + esc(note) + '</div>' : '');
   }
   UI.switchHtml = switchHtml;
   function policyControls() {
-    var S = App.live, html = '<div class="policy-row">' + switchHtml('swap', 'Battery swap (person)', App.policy.swap) + switchHtml('agent', 'Recovery agent (level 1, behind the check)', App.policy.agent) + '</div>';
+    var S = App.live, html = '<div class="policy-row">' + switchHtml('swap', 'Battery swap (a person swaps in a charged pack, instead of a 100-minute charge)', App.policy.swap) + switchHtml('agent', 'Recovery agent (AI proposes a fix for a stopped robot; fixed rules check it before the robot moves)', App.policy.agent) + '</div>';
     if (App.policy.swap) {
       html += sliderHtml('swapTime', PDEF.swapTime, App.params.swapTime, 'Swap time', FMT.swapTime) + sliderHtml('spares', PDEF.spares, App.params.spares, 'Spare packs per robot', FMT.spares) + sliderHtml('operators', PDEF.operators, App.params.operators, 'Operators at the swap bay', FMT.operators);
       html += '<div data-live="swapReadout">' + swapReadout() + '</div>';

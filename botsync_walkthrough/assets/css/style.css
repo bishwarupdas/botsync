@@ -466,3 +466,20 @@ details.pipe-prev { border: 1px dashed var(--line); padding: 4px 8px; margin: 6p
 .sh-events .ev-incident { border-left: 4px solid #C62828; }
 .sh-events .ev-mission { border-left: 4px solid var(--accent); }
 .linkish { border: none; background: none; color: var(--accent); text-decoration: underline; padding: 0; min-height: 0; font: inherit; cursor: pointer; }
+/* Game: sliders of a policy that is off are greyed out (added after review) */
+.gated { border-left: 3px solid var(--accent-mid); padding-left: 8px; margin: 6px 0; }
+.gated .gate-note { display: none; margin: 0; }
+.gated.off { opacity: 0.55; border-left-color: #C9C7C1; }
+.gated.off .gate-note { display: block; }
+/* Game: how the game works, under the map (added after review) */
+.map-col .game-logic { margin-top: 8px; flex: 1 1 0; min-height: 120px; overflow-y: auto; border: 1px solid var(--accent-mid); border-top: 4px solid var(--accent); background: var(--surface); padding: 8px 10px; }
+.game-logic h3 { margin: 0 0 4px; }
+.game-logic .gl { margin: 0 0 4px 20px; padding: 0; font-size: 14px; }
+.game-logic .gl li { margin: 3px 0; }
+.game-logic .gl-off { color: #8A8C92; }
+.game-logic .gl-on { color: var(--accent); font-weight: bold; }
+/* switch labels: name, then a plain-words bracket (added after review) */
+.switch { text-align: left; align-items: flex-start; }
+.switch .track { margin-top: 1px; }
+.switch .sw-name { font-weight: bold; }
+.switch .sw-why { color: #4A4D55; font-size: 14px; }

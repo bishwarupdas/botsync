@@ -1,7 +1,7 @@
 === Test 16: Zip test
-zip size: 600284 bytes (0.57 MB)
+zip size: 603672 bytes (0.58 MB)
   PASS zip is under 5 MB
-unzipped into a new folder: /tmp/fresh_unzip.j2O9nY
+unzipped into a new folder: /tmp/fresh_unzip.TZDSjn
 Archive:  botsync_walkthrough.zip
   Length      Date    Time    Name
 ---------  ---------- -----   ----
@@ -9,26 +9,26 @@ Archive:  botsync_walkthrough.zip
         0  2026-10-30 09:50   botsync_walkthrough/assets/
         0  2026-10-30 09:50   botsync_walkthrough/assets/img/
       551  2026-10-30 10:58   botsync_walkthrough/assets/img/favicon.svg
-        0  2026-10-30 14:36   botsync_walkthrough/assets/css/
-    32805  2026-10-30 14:44   botsync_walkthrough/assets/css/style.css
-        0  2026-10-30 15:09   botsync_walkthrough/assets/js/
+        0  2026-10-30 17:40   botsync_walkthrough/assets/css/
+    33908  2026-10-30 17:40   botsync_walkthrough/assets/css/style.css
+        0  2026-10-30 17:25   botsync_walkthrough/assets/js/
    980460  2026-10-30 14:42   botsync_walkthrough/assets/js/history-data.js
-    35004  2026-10-30 12:11   botsync_walkthrough/assets/js/sim.js
-   139931  2026-10-30 15:09   botsync_walkthrough/assets/js/ui.js
+    35841  2026-10-30 17:10   botsync_walkthrough/assets/js/sim.js
+   140538  2026-10-30 17:40   botsync_walkthrough/assets/js/ui.js
      3280  2026-10-30 14:37   botsync_walkthrough/assets/js/predict-calc.js
     63437  2026-10-30 14:37   botsync_walkthrough/assets/js/predict-data.js
-    17365  2026-10-30 11:55   botsync_walkthrough/assets/js/game.js
+    25354  2026-10-30 17:40   botsync_walkthrough/assets/js/game.js
     23428  2026-10-30 14:40   botsync_walkthrough/assets/js/predict.js
-    78569  2026-10-30 14:34   botsync_walkthrough/assets/js/scenarios.js
+    78627  2026-10-30 17:40   botsync_walkthrough/assets/js/scenarios.js
     44861  2026-10-30 14:44   botsync_walkthrough/assets/js/draw.js
-   108232  2026-10-30 10:08   botsync_walkthrough/assets/js/data.js
+   108797  2026-10-30 17:10   botsync_walkthrough/assets/js/data.js
     17629  2026-10-30 14:37   botsync_walkthrough/assets/js/voice.js
     12904  2026-10-30 11:59   botsync_walkthrough/assets/js/warehouses.js
     23199  2026-10-30 14:45   botsync_walkthrough/assets/js/history.js
-     5078  2026-10-30 15:18   botsync_walkthrough/index.html
+     5172  2026-10-30 17:25   botsync_walkthrough/index.html
       215  2026-10-30 09:50   botsync_walkthrough/README.txt
 ---------                     -------
-  1586948                     22 files
+  1598201                     22 files
 
 === Test 1: Opens clean (fresh unzip)
   PASS console errors/warnings: 0 []

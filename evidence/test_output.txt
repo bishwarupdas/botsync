@@ -98,7 +98,7 @@
   PASS RICE "LLM task planning": recomputed 1.250 vs stored 1.3
   PASS RICE "Fixed cameras around sites": recomputed 0.625 vs stored 0.6
   PASS roadmap has 6 months
-  PASS 1394 value objects, all carry a src field
+  PASS 1395 value objects, all carry a src field
   T9: ALL PASS
 
 === Test 10: Numbers match the workbook; with test 22 (python3 tools/test_workbook.py)
@@ -297,8 +297,8 @@
   PASS C charging 12.4% vs 11.6% (±3 pts)
   PASS C emergency low-battery stops 1.6 vs 3 (±3)
   PASS C incidents 55.9 vs 59 (±20%)
-  selfTest(): 20 seeds x 30 days x 3 warehouses in 60.1 s
-  PASS same seed twice gives byte-identical results (6723 bytes)
+  selfTest(): 20 seeds x 30 days x 3 warehouses in 53.4 s
+  PASS same seed twice gives byte-identical results (7022 bytes)
   PASS a different seed gives a different result
 
 === Test 12: Game sanity (10.8)
@@ -309,6 +309,10 @@
   PASS triage changes no robot time (returned 0, extra 0)
   PASS swap time 15 min reduces the benefit: 136.0 h vs 158.7 h at 5 min
   PASS headroom 0%: extra moves 0, time returned 166.9 h
+  PASS B: a second operator at the swap bay cuts the wait for a free operator from 3.16 to 1.04 min per swap (5 seeds)
+  PASS C: a second operator at the swap bay cuts the wait for a free operator from 4.71 to 1.80 min per swap (5 seeds)
+  PASS fixed cameras without the recovery agent change nothing (10 seeds)
+  PASS fixed cameras with the agent: 8 more stops fixed over 10 weeks at A, downtime 58.3 -> 55.9 h (uplift 0.30, assumed)
   PASS B shows a smaller gain in moves than A (per robot: A 39.4, B 18.5)
 
 === Test 13: Keyboard
@@ -380,8 +384,8 @@
 
 === Test 17: Speed
   PASS a week at 16x ran in 2.06 s (< 3 s)
-  PASS 20-run average finished in 5.0 s (< 60 s)
-  PASS page stayed responsive: longest gap between heartbeats 558 ms
+  PASS 20-run average finished in 4.7 s (< 60 s)
+  PASS page stayed responsive: longest gap between heartbeats 531 ms
 
 === Test 18: Assets gallery
   PASS 89 required assets present in the gallery (94 figures); missing: none
@@ -429,11 +433,11 @@
   PASS Show sources on fleet: 96 numbers carry a source tag
   PASS Show sources on roadmap: 45 numbers carry a source tag
   PASS Show sources on explore: 34 numbers carry a source tag
-  PASS Show sources on game: 40 numbers carry a source tag
+  PASS Show sources on game: 48 numbers carry a source tag
   PASS Show sources on predict: 39 numbers carry a source tag
   PASS Show sources on site: 89 numbers carry a source tag
-  PASS every one of 372 tags is printed from a src field in data.js (0 not: [])
-  PASS src values in data.js: Analysis 1 | Analysis 2 | Analysis 9 | Analysis 4 | Analysis 10 | Analysis 5 | sites and incidents tabs | Analysis 3 | Analysis 6 | Analysis 7 | Planted_patterns tab | Analysis 8 | assumed | sites tab | incidents tab | charge_sessions tab | eval_results tab (scripted scenario, not measured) | scripted example | change_requests tab (scripted scenario, not measured) | assumed (author estimate) | derived from the values next to it | battery_packs tab | robots tab | robot_daily_utilization tab | stations tab | error_codes tab | Analysis 11 | Analysis 12 | ai_flow_steps tab | simulated | Analysis 13a | Analysis 13b | Analysis 13c | Analysis 13d | Analysis 13e | missions tab | robots and battery_packs tabs | calculated
+  PASS every one of 380 tags is printed from a src field in data.js (0 not: [])
+  PASS src values in data.js: Analysis 1 | Analysis 2 | Analysis 9 | Analysis 4 | Analysis 10 | Analysis 5 | sites and incidents tabs | Analysis 3 | Analysis 6 | Analysis 7 | Planted_patterns tab | Analysis 8 | assumed | assumed (author estimate) | sites tab | incidents tab | charge_sessions tab | eval_results tab (scripted scenario, not measured) | scripted example | change_requests tab (scripted scenario, not measured) | derived from the values next to it | battery_packs tab | robots tab | robot_daily_utilization tab | stations tab | error_codes tab | Analysis 11 | Analysis 12 | ai_flow_steps tab | simulated | Analysis 13a | Analysis 13b | Analysis 13c | Analysis 13d | Analysis 13e | missions tab | robots and battery_packs tabs | calculated
 
 === Test 21: Demand honesty (8.1b)
   PASS A, headroom 0%, {"swap":true}: extra pallet moves 0 on all 5 seeds; robot time returned at least 159.5 h
@@ -498,7 +502,7 @@ Test  8 PASS  Safety refusal changes nothing in the sim  (4 checks)
 Test  9 PASS  Data integrity (node tools/test_data.js)  (21 checks)
 Test 10 PASS  Numbers match the workbook; with test 22 (python3 tools/test_workbook.py)  (179 checks)
 Test 11 PASS  Simulation calibration (8.5) and determinism  (14 checks)
-Test 12 PASS  Game sanity (10.8)  (8 checks)
+Test 12 PASS  Game sanity (10.8)  (12 checks)
 Test 13 PASS  Keyboard  (13 checks)
 Test 14 PASS  Reduced motion  (4 checks)
 Test 15 PASS  Layout at 1440x900 and 1024x768  (44 checks)

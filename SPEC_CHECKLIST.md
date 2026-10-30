@@ -118,7 +118,7 @@ All of these were run by clicks in the audit and by the scenario runner in T7.
 
 | Spec | Where | Checked by |
 |---|---|---|
-| 10 Game: switches, cameras greyed out, sliders with defaults and tags, Reset, Run a week, Skip, seed, 20-run average, scoreboard, result line, boxes | Game panel | T12, T17, T21; Audit (all at A, B and C) |
+| 10 Game: switches (fixed cameras now working, with the agent; changed after review), sliders with defaults and tags, Reset, Run a week, Skip, seed, 20-run average, scoreboard, result line, boxes | Game panel | T12, T17, T21; Audit (all at A, B and C) |
 | 11 Voice: phone, tap to speak, 4 phrases, confirm card, refusal, follow-up question, risks, note. **Changed after review:** scenario V in the scenario player | Scenario V | T7, T8; Audit (by tapping and by variant buttons) |
 | 12 RICE (recomputed), roadmap, 12.2b measures, benefits, model choice | Roadmap | T9, T20 |
 | 13 Guided. **Changed after review:** 9 chapters, 36 steps, chapter list, Next unlocks after a decision | guide bar | T20; Audit (every step, Back, Leave, Return, chapter list, final buttons) |

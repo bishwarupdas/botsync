@@ -189,6 +189,13 @@ async function main() {
     ok(s15.ret < sA.ret, `swap time 15 min reduces the benefit: ${s15.ret.toFixed(1)} h vs ${sA.ret.toFixed(1)} h at 5 min`);
     const h0 = avg('A', { swap: true }, { headroom: 0 }, 5);
     ok(h0.extra === 0 && h0.ret > 0, `headroom 0%: extra moves ${h0.extra}, time returned ${h0.ret.toFixed(1)} h`);
+    // added after review: operators at the swap bay and fixed cameras both act in the sim
+    for (const wh of ['B', 'C']) { let w1 = 0, w2 = 0; for (let sd = 1; sd <= 5; sd++) { w1 += W.Sim.compare({ wh, seed: sd, days: 7, policy: { swap: true }, params: { operators: 1 } }).policy.swapWaitPerSwap / 5; w2 += W.Sim.compare({ wh, seed: sd, days: 7, policy: { swap: true }, params: { operators: 2 } }).policy.swapWaitPerSwap / 5; }
+      ok(w2 < w1, `${wh}: a second operator at the swap bay cuts the wait for a free operator from ${w1.toFixed(2)} to ${w2.toFixed(2)} min per swap (5 seeds)`); }
+    { let alone = 0, assisted = 0, dt0 = 0, dt1 = 0; for (let sd = 1; sd <= 10; sd++) { const c0 = W.Sim.compare({ wh: 'A', seed: sd, days: 7, policy: { cams: true } }); alone += Math.abs(c0.robotHoursReturned) + c0.policy.camAssisted;
+        const a = W.Sim.compare({ wh: 'A', seed: sd, days: 7, policy: { agent: true } }), b = W.Sim.compare({ wh: 'A', seed: sd, days: 7, policy: { agent: true, cams: true }, params: { camUplift: 0.3 } }); assisted += b.policy.camAssisted; dt0 += a.policy.downtimeHours; dt1 += b.policy.downtimeHours; }
+      ok(alone === 0, 'fixed cameras without the recovery agent change nothing (10 seeds)');
+      ok(assisted > 0 && dt1 < dt0, `fixed cameras with the agent: ${assisted} more stops fixed over 10 weeks at A, downtime ${dt0.toFixed(1)} -> ${dt1.toFixed(1)} h (uplift 0.30, assumed)`); }
     ok(per(sB.extra, 'B') < per(sA.extra, 'A'), `B shows a smaller gain in moves than A (per robot: A ${per(sA.extra, 'A').toFixed(1)}, B ${per(sB.extra, 'B').toFixed(1)})`); }
 
   test(13, 'Keyboard');
@@ -197,7 +204,7 @@ async function main() {
       await p.evaluate(sc => { UI.show(sc); UI.setSpeed(0); }, sc); await p.waitForTimeout(300);   // paused: the robot list is not re-drawn while we walk it
       await p.evaluate(() => document.activeElement && document.activeElement.blur());
       const reached = new Set(); let ring = true;
-      for (let k = 0; k < 220; k++) { await p.keyboard.press('Tab'); const info = await p.evaluate(() => { const e = document.activeElement; if (!e || e === document.body) return null; e.dataset.tabseen = '1'; const cs = getComputedStyle(e); return { tag: e.tagName, ring: cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) >= 2 }; }); if (info) { reached.add(1); if (info.tag === 'BUTTON' && !info.ring) ring = false; } }
+      for (let k = 0; k < 320; k++) { await p.keyboard.press('Tab'); const info = await p.evaluate(() => { const e = document.activeElement; if (!e || e === document.body) return null; e.dataset.tabseen = '1'; const cs = getComputedStyle(e); return { tag: e.tagName, ring: cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) >= 2 }; }); if (info) { reached.add(1); if (info.tag === 'BUTTON' && !info.ring) ring = false; } }
       const missed = await p.evaluate(() => [...document.querySelectorAll('button')].filter(b => b.offsetParent && !b.disabled && !b.closest('#legend') && b.getBoundingClientRect().width > 0 && !b.dataset.tabseen).map(b => b.textContent.trim().slice(0, 30)));
       ok(missed.length === 0 || (sc === 'roadmap' && missed.length < 3), `${sc}: every visible button reachable with Tab (${missed.length} not reached ${JSON.stringify(missed.slice(0, 5))})`);
       ok(ring, `${sc}: focused buttons show a 2 px focus ring`);

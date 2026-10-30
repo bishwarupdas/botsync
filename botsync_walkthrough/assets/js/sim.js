@@ -56,6 +56,7 @@
       gatePass: P.gatePass != null ? P.gatePass : A.gatePass.v,
       headroom: P.headroom != null ? P.headroom : A.headroom.v,
       triageSaving: P.triageSaving != null ? P.triageSaving : A.triageSaving.v,
+      camUplift: P.camUplift != null ? P.camUplift : A.camUplift.v,
       chargeTrigger: P.chargeTrigger != null ? P.chargeTrigger : cal.chargeTrigger,
       demand: P.demand != null ? P.demand : cal.demand,
       offered: opts.offeredHeadroom || 0,   // extra work waiting, offered to Today and the policy alike (8.1b)
@@ -70,7 +71,7 @@
       robots: [], chargers: wh.chargers.map(function () { return null; }), chargeQueue: [], swapQueue: [], operatorsBusy: [],
       packs: [], events: [], budget: opts.budget || null, pFlat: pFlat, closed: {}, pending: 0, rngW: stream(seed, 777), arrived: 0,
       m: { cat: { moving: 0, charging: 0, idle: 0, stopped: 0 }, sched: 0, dayMoving: [], dayCat: [], incidents: {}, emergency: 0, downtimeMin: 0,
-        walkUps: 0, humanClicks: 0, swaps: 0, swapWait: 0, chargeSessions: 0, agentHandled: 0, confirmed: 0, confirmedBase: 0, totalInc: 0, walkUpsAvoided: 0,
+        walkUps: 0, humanClicks: 0, swaps: 0, swapWait: 0, opBusy: 0, camAssisted: 0, camEligible: 0, chargeSessions: 0, agentHandled: 0, confirmed: 0, confirmedBase: 0, totalInc: 0, walkUpsAvoided: 0,
         waitMin: 0, chargerFallbacks: 0, queueMin: 0, missionsDone: 0 }
     };
     for (var dd = 0; dd < days + 1; dd++) { S.m.dayMoving.push(0); S.m.dayCat.push({ moving: 0, charging: 0, idle: 0, stopped: 0, sched: 0 }); }
@@ -212,12 +213,16 @@
     if (!inc.station && r.mission) inc.station = (r.mission.phase === 'toPick' ? r.mission.pick : r.mission.drop).name;
     inc.handledBy = inc.recov;
     // 8.3 recovery agent: level-1 codes that today need an operator or remote person
-    if (S.policy.agent && lvl === '1' && (inc.recov === 'operator' || inc.recov === 'remote') && inc.uAgent < S.params.agentCan) {
+    // fixed cameras (added after review): a second view of the scene raises the agent's chance on camera-dependent stops; nothing else
+    var camBoost = S.policy.cams && D.cameraCodes.indexOf(inc.code) >= 0 ? S.params.camUplift : 0;
+    if (S.policy.agent && lvl === '1' && (inc.recov === 'operator' || inc.recov === 'remote') && inc.uAgent < Math.min(1, S.params.agentCan + camBoost)) {
+      if (inc.uAgent >= S.params.agentCan) m.camAssisted++;
       if (inc.uGate < S.params.gatePass) { inc.down = RECOVERY.auto.median.v; inc.handledBy = 'agent'; }
       else { inc.down = RECOVERY.auto.median.v + A.approvalWaitMin.v; inc.handledBy = 'agent+click'; m.humanClicks++; }
       m.agentHandled++; if (inc.recov === 'operator') m.walkUpsAvoided++;
     }
     if (inc.handledBy === 'operator' && S.mode !== 'explore') m.walkUps++;   // Explore counts the walk-up when it happens (ui.js)
+    if (lvl === '1' && D.cameraCodes.indexOf(inc.code) >= 0 && (inc.recov === 'operator' || inc.recov === 'remote')) m.camEligible++;
     m.incidents[inc.code] = (m.incidents[inc.code] || 0) + 1; m.totalInc++;
     if (inc.code === 'ERR_BATTERY_LOW_CRITICAL') m.emergency++;
     m.downtimeMin += inc.down;
@@ -359,7 +364,7 @@
         if (r.timer <= 1e-9) {
           r.battery = 1; var opi = S.operatorsBusy.indexOf(r.i); if (opi >= 0) S.operatorsBusy[opi] = null;
           var pk = S.packs[r.packId]; pk.state = 'charging'; pk.readyAt = tl + used + CHARGE_MIN; pk.reserved = false; r.packId = -1;
-          S.m.swaps++; r.state = 'idle'; S.t = tl + used; serveSwapQueue(S);
+          S.m.swaps++; S.m.opBusy += S.params.swapTime; r.state = 'idle'; S.t = tl + used; serveSwapQueue(S);
           log(S, r, '', 'pack swapped', { kind: 'swap' });
         }
       } else if (st === 'stopped' || st === 'recovering') {
@@ -445,7 +450,8 @@
       palletMoves: m.cat.moving / 60 * ppm, queueHours: m.queueMin / 60, emergencyLowBatteryStops: m.emergency, incidents: m.totalInc, incidentsByCode: m.incidents,
       downtimeHours: m.downtimeMin / 60, operatorWalkUps: m.walkUps, humanClicks: m.humanClicks, swapsDone: m.swaps, swapWaitMinutesTotal: m.swapWait,
       flatBatteryEventsAvoided: m.swaps * S.pFlat, packsInUse: S.packs.length, chargeSessions: m.chargeSessions, chargerFallbacks: m.chargerFallbacks,
-      agentHandled: m.agentHandled, walkUpsAvoided: m.walkUpsAvoided,
+      agentHandled: m.agentHandled, walkUpsAvoided: m.walkUpsAvoided, camAssisted: m.camAssisted, camEligible: m.camEligible,
+      operators: S.params.operators, operatorBusyShare: m.sched ? m.opBusy / (S.params.operators * m.sched / S.robots.length) : 0, swapWaitPerSwap: m.swaps ? m.swapWait / m.swaps : 0,
       confirmedCausePercent: m.totalInc ? m.confirmed / m.totalInc : A.confirmedCauseStart.v,
       noFaultFoundEngineeringHours: D.support.noFaultFoundEngHours.v * (S.policy.triage ? 1 - S.params.triageSaving : 1),
       backlog: S.pending, arrived: S.arrived, missionsDone: m.missionsDone,

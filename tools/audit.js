@@ -201,13 +201,23 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   for (const w of ['A', 'B', 'C']) {
     await click(`#topbar [data-wh="${w}"]`); await sleep(300);
     for (const k of ['swap', 'agent', 'triage']) { const on = await p.$eval(`[data-policy="${k}"]`, e => e.getAttribute('aria-pressed')); if (on !== 'true') await click(`[data-policy="${k}"]`); }
-    rec(await p.$eval('[data-policy="cams"]', e => e.disabled), `Game ${w}: fixed cameras switch is greyed out`);
-    for (const k of ['headroom', 'swapTime', 'spares', 'operators', 'agentCan', 'gatePass', 'triageSaving']) await p.$eval(`#sl-${k}`, e => { e.value = e.max; e.dispatchEvent(new Event('input', { bubbles: true })); });
+    // fixed cameras (changed after review): a working switch that needs the recovery agent; its slider is greyed out while it is off
+    { const on = await p.$eval('[data-policy="cams"]', e => e.getAttribute('aria-pressed')); if (on === 'true') await click('[data-policy="cams"]'); }
+    rec(await p.evaluate(() => document.querySelector('[data-gate="cams"]').classList.contains('off') && document.getElementById('sl-camUplift').disabled), `Game ${w}: cameras off -> its slider is greyed out and disabled`);
+    await click('[data-policy="agent"]');   // agent was switched on above: now off
+    await click('[data-policy="cams"]');
+    rec(await p.evaluate(() => !document.getElementById('cams-warn').hidden), `Game ${w}: cameras on without the agent -> a warning says only the agent uses the pictures`);
+    rec(await p.evaluate(() => { const g = document.getElementById('game-logic'); return !g.hidden && /How the Game works/.test(g.textContent) && /The agent is off, so this changes nothing/.test(g.querySelector('.gl-cams').textContent) && g.querySelector('.gl-agent').classList.contains('gl-off') && g.getBoundingClientRect().height > 100; }), `Game ${w}: "How the Game works" sits under the map and follows the switches`);
+    await click('[data-policy="agent"]');
+    rec(await p.evaluate(() => document.getElementById('cams-warn').hidden && !document.getElementById('sl-camUplift').disabled), `Game ${w}: cameras + agent -> warning gone, camera slider enabled`);
+    for (const k of ['headroom', 'swapTime', 'spares', 'operators', 'agentCan', 'gatePass', 'camUplift', 'triageSaving']) await p.$eval(`#sl-${k}`, e => { e.value = e.max; e.dispatchEvent(new Event('input', { bubbles: true })); });
     await click('#g-reset'); rec(await p.evaluate(() => Game.state.params.headroom === 0.25 && Game.state.params.swapTime === 5), `Game ${w}: Reset restores defaults`);
     for (const k of ['swap', 'agent', 'triage']) { const on = await p.$eval(`[data-policy="${k}"]`, e => e.getAttribute('aria-pressed')); if (on !== 'true') await click(`[data-policy="${k}"]`); }
     await click('#g-run'); await sleep(500); await click('#g-skip'); await sleep(300);
     const sb = await p.evaluate(() => ({ rows: document.querySelectorAll('.score tbody tr').length, line: (document.querySelector('[data-k="resultline"]') || {}).textContent || '' }));
     rec(sb.rows >= 13 && /Direction only/.test(sb.line), `Game ${w}: Run a week + Skip -> scoreboard ${sb.rows} rows; "${sb.line.slice(0, 70)}..."`);
+    const gm = await p.evaluate(() => ({ ops: /Average wait for a free operator/.test(document.getElementById('g-out').textContent), cams: /fixed by the agent only because a fixed camera saw them/.test(document.getElementById('g-out').textContent) && /Fixed cameras let the agent fix \d+ more/.test(document.querySelector('[data-k="resultline"]').textContent) }));
+    rec(gm.ops && gm.cams, `Game ${w}: scoreboard shows the swap-bay operators (busy share, wait per swap) and what the fixed cameras added`);
     await click('#g-seed'); rec(await p.evaluate(() => Game.state.seed === 2), `Game ${w}: Try another seed`); await p.evaluate(() => { Game.state.seed = 1; });
     await check(`Game ${w}`);
   }

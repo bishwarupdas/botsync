@@ -535,7 +535,7 @@
     },
     body: function () {
       var c = D.charging, A = D.assumed, P = UI.PDEF;
-      return '<div class="box"><h4>Policy</h4><div class="policy-row">' + UI.switchHtml('swap', 'Battery swap (person)', window.App.policy.swap) + '</div>' +
+      return '<div class="box"><h4>Policy</h4><div class="policy-row">' + UI.switchHtml('swap', 'Battery swap (a person swaps in a charged pack, instead of a 100-minute charge)', window.App.policy.swap) + '</div>' +
         UI.sliderHtml('swapTime', P.swapTime, window.App.params.swapTime, 'Swap time', UI.FMT.swapTime) + UI.sliderHtml('spares', P.spares, window.App.params.spares, 'Spare packs per robot', UI.FMT.spares) + UI.sliderHtml('operators', P.operators, window.App.params.operators, 'Operators at the swap bay', UI.FMT.operators) +
         '<h4>Live readout ' + UI.tag('simulated') + '</h4><div data-live="swapReadout">' + UI.swapReadout() + '</div>' +
         '<p class="small">Move the spare-pack slider to 0: robots fall back to the charger and the flat-battery stops return.</p>' +
