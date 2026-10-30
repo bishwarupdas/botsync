@@ -33,7 +33,15 @@ def main(xlsx, datajs):
         if not r['error_code'].startswith('ERR_'): continue
         codes[r['error_code']] = {'severity': 'soft stop' if r['severity'] == 'soft_stop' else 'hard stop',
                                   'auto': r['auto_recoverable'] == 'Y', 'cause': r['typical_cause'], 'category': r['category'], 'src': S_CODES}
+    packs = {r['pack_id']: r for r in rows(wb, 'battery_packs')}
+    demo = {}
+    for r in rows(wb, 'robots'):
+        if r['site_id'] in ('S08', 'S12', 'S20'):
+            pk = packs[r['battery_pack_id']]
+            demo.setdefault(r['site_id'], []).append({'firmware': r['firmware_version'], 'pack': r['battery_pack_id'],
+                'soh': V(pk['soh_pct'], 'battery_packs tab'), 'src': 'robots tab'})
     block = ('/* BEGIN GENERATED (tools/build_data.py; do not edit by hand) */\n'
+             '    demoRobots: ' + json.dumps(demo) + ',\n'
              '    siteTable: ' + json.dumps(sites, ensure_ascii=False) + ',\n'
              '    errorCodes: ' + json.dumps(codes, ensure_ascii=False, indent=1).replace('\n', '\n    ') + ',\n'
              '    /* END GENERATED */')

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Botsync case: fleet walkthrough</title>
+<link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header id="topbar">
+  <div class="tb-row">
+    <h1 class="title">Botsync case: fleet walkthrough <span id="role-label" class="role-label"></span></h1>
+    <div class="group" role="group" aria-label="Mode"><span class="glabel">Mode</span>
+      <button class="seg" data-mode="guided" aria-pressed="false">Guided</button>
+      <button class="seg" data-mode="explore" aria-pressed="false">Explore</button>
+      <button class="seg" data-mode="game" aria-pressed="false">Game</button>
+    </div>
+    <div class="group" role="group" aria-label="Warehouse"><span class="glabel">Warehouse</span>
+      <button class="seg" data-wh="A" aria-pressed="false">A · S08</button>
+      <button class="seg" data-wh="B" aria-pressed="false">B · S12</button>
+      <button class="seg" data-wh="C" aria-pressed="false">C · S20</button>
+    </div>
+    <div class="group" role="group" aria-label="Speed"><span class="glabel">Speed</span>
+      <button class="seg" data-speed="0" aria-pressed="false">Pause</button>
+      <button class="seg" data-speed="1" aria-pressed="true">1x</button>
+      <button class="seg" data-speed="4" aria-pressed="false">4x</button>
+      <button class="seg" data-speed="16" aria-pressed="false">16x</button>
+    </div>
+  </div>
+  <div class="tb-row">
+    <nav class="group" aria-label="Screens">
+      <button data-screen="start">Start</button>
+      <button data-screen="evidence">What the data says</button>
+      <button data-screen="fleet">Fleet overview</button>
+      <button data-screen="how">How it works</button>
+      <button data-screen="arch">Where each piece runs</button>
+      <button data-screen="roadmap">Roadmap</button>
+      <button data-screen="voice">Voice from a phone</button>
+      <button id="legend-btn" aria-expanded="false">Legend</button>
+    </nav>
+    <button id="src-switch" class="switch" aria-pressed="false"><span class="track"><span class="knob"></span></span>Show sources</button>
+    <div class="group" role="group" aria-label="View as" id="roles"><span class="glabel">View as</span></div>
+  </div>
+</header>
+<div id="banner" role="note"></div>
+<div id="guide-bar" hidden></div>
+<main id="main" tabindex="-1">
+  <section id="screen-start" class="screen" aria-label="Start"></section>
+  <section id="screen-work" class="screen" aria-label="Floor">
+    <div class="work">
+      <div class="map-col">
+        <div id="swap-strip" class="swap-strip" hidden></div>
+        <div class="map-head"><strong id="map-title"></strong><span class="clock" id="clock"></span><span class="small" id="map-note"></span></div>
+        <div class="map-wrap"><canvas id="map" width="900" height="520" tabindex="0" aria-label="Floor map. Use Tab to reach the robot list in the side panel."></canvas><div id="map-overlay" class="overlay-note" hidden></div></div>
+        <div class="map-foot" id="map-foot"></div>
+      </div>
+      <aside class="side" id="side" aria-live="polite"></aside>
+    </div>
+    <div class="strip" id="strip"></div>
+  </section>
+  <section id="screen-evidence" class="screen" aria-label="What the data says"></section>
+  <section id="screen-fleet" class="screen" aria-label="Fleet overview"></section>
+  <section id="screen-how" class="screen" aria-label="How it works"></section>
+  <section id="screen-arch" class="screen" aria-label="Where each piece runs"></section>
+  <section id="screen-roadmap" class="screen" aria-label="Roadmap"></section>
+  <section id="screen-assets" class="screen" aria-label="Assets gallery"></section>
+</main>
+<div id="legend" class="dialog" role="dialog" aria-label="Legend" hidden></div>
+<footer>Botsync case submission: an interactive walkthrough of the written case. Dummy data; no live model calls; works offline.</footer>
+<noscript><p>This page needs JavaScript. It runs entirely in your browser; nothing is sent anywhere.</p></noscript>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/draw.js"></script>
+<script src="assets/js/warehouses.js"></script>
+<script src="assets/js/sim.js"></script>
+<script src="assets/js/scenarios.js"></script>
+<script src="assets/js/ui.js"></script>
+<script src="assets/js/game.js"></script>
+<script src="assets/js/voice.js"></script>
+</body>
+</html>
