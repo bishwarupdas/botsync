@@ -29,6 +29,7 @@
       case 'f0': return Math.round(v).toLocaleString('en-US');
       case 'f1': return v.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
       case 'f2': return half(v, 2).toFixed(2);
+      case 'f3': return half(v, 3).toFixed(3);
       case 'lakh': return '₹' + v.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' lakh';
       case 'lakh0': return '₹' + Math.round(v).toLocaleString('en-US') + ' lakh';
       case 'x': return v.toFixed(1) + 'x';
@@ -134,7 +135,7 @@
       '<p><button class="linkish" data-go="tour">Quick tour (2 minutes)</button> · <button class="linkish" data-go="game">Game: compare policies</button></p>' +
       '<div class="lines"><p>This page lets you see and try the case: pick a warehouse, watch robots work, open a stopped robot, press Recover and follow each step of the fix.</p>' +
       '<p>The data is dummy data with seeded patterns. Model steps are scripted examples, not live model calls.</p>' +
-      '<p>Guided takes about 8 minutes. Explore and Game are free play.</p></div></div>';
+      '<p>Guided has 9 chapters (about 20 minutes; jump between chapters at any time). The Quick tour takes about 2 minutes. Explore and Game are free play.</p></div></div>';
   });
 
   /* ---------------- Legend (A12) ---------------- */
@@ -1039,6 +1040,7 @@
     });
     return s + '</svg>';
   }
+  UI.hbarChart = hbarChart;
   function legend(items) { return '<p class="small">' + items.map(function (i) { return Draw.svgLegendSwatch(i[0]) + ' ' + esc(i[1]); }).join(' &nbsp; ') + '</p>'; }
   function pct(v, d) { return (v * 100).toFixed(d == null ? 0 : d) + '%'; }
   UI.register('evidence', function () {
@@ -1084,18 +1086,18 @@
     lb.sort(function (a, b) { return a.v - b.v; });
     var tiles = rows.map(function (s) {
       var demo = D.demoSites[s.site_id], pilot = D.pilotSites.indexOf(s.site_id) >= 0, t24 = s.shift_pattern === '24x7';
-      return '<button class="tile' + (t24 ? ' t24' : '') + '" data-site="' + s.site_id + '"' + (demo ? ' data-demo="' + demo + '"' : '') + ' aria-label="' + esc(s.site_id + ' ' + s.site_name) + (demo ? ', open warehouse ' + demo : ', not simulated here') + '">' +
+      return '<button class="tile' + (t24 ? ' t24' : '') + '" data-site="' + s.site_id + '"' + (demo ? ' data-demo="' + demo + '"' : '') + ' aria-label="' + esc(s.site_id + ' ' + s.site_name) + ', open its 30-day history' + (demo ? ' (also simulated as warehouse ' + demo + ')' : '') + '">' +
         '<div class="tname">' + esc(s.site_id) + ' ' + esc(s.site_name) + '</div><div class="small">' + esc(s.shift_pattern) + ' · ' + N(s.robots_deployed, 'int') + ' robots</div>' +
         '<div class="small">charging ' + N(s.chargingShare, 'pct1') + ' ' + Draw.htmlMiniMeter(s.chargingShare.v / 0.25, 'charging share') + '</div>' +
         '<div class="small">low-battery stops per robot ' + N(s.lowBatteryPerRobot, 'f2') + '</div>' +
         '<div class="tags">' + (pilot ? '<span class="tag">pilot</span>' : '') + (demo ? '<span class="tag">in this demo</span>' : '') + '</div>' +
-        (demo ? '' : '<div class="not-sim">not simulated here</div>') + '</button>';
+        '<div class="not-sim">' + (demo ? 'history, and live as warehouse ' + demo : 'history (not simulated here)') + '</div></button>';
     }).join('');
     $('#screen-fleet').innerHTML = '<div class="page"><h2>Fleet overview: the 250 robots in context</h2>' +
       '<p class="box" data-k="header"><strong>' + N(D.charging.byPattern['24x7'].sites, 'int') + ' of ' + N(D.fleet.sites, 'int') + ' sites run 24 hours: ' + N(D.charging.robotsAt24x7Sites, 'int') + ' of ' + N(D.fleet.robots, 'int') + ' robots (Analysis 4).</strong> This is where the swap can help; the other sites rest overnight.</p>' +
-      '<p>Low-battery stops are not uniform across the 24x7 sites (from ' + N(lb[0], 'f2') + ' to ' + N(lb[lb.length - 1], 'f2') + ' per robot); the pilot is chosen where they are highest. Bold outline: runs 24x7. Sorted by shift pattern, then site id. Click S08, S12 or S20 to open that warehouse.</p>' +
+      '<p>Low-battery stops are not uniform across the 24x7 sites (from ' + N(lb[0], 'f2') + ' to ' + N(lb[lb.length - 1], 'f2') + ' per robot); the pilot is chosen where they are highest. Bold outline: runs 24x7. Sorted by shift pattern, then site id. <strong>Click any site for its 30-day history</strong>: every robot, what it did each day and hour, and a site-level prediction. S08, S12 and S20 also open as live simulated warehouses from there.</p>' +
       '<div class="tiles">' + tiles + '</div><p class="small">Generated from the workbook tabs sites, robot_daily_utilization and incidents by tools/build_data.py.</p></div>';
-    $$('#screen-fleet .tile').forEach(function (b) { b.onclick = function () { if (b.dataset.demo) { UI.setWarehouse(b.dataset.demo); UI.show('explore'); } else b.querySelector('.not-sim').textContent = 'not simulated here (only S08, S12 and S20 are)'; }; });
+    $$('#screen-fleet .tile').forEach(function (b) { b.onclick = function () { UI.show('site', { site: b.dataset.site }); }; });
   });
 
   /* ======================================================================
@@ -1210,75 +1212,153 @@
   /* ======================================================================
      Guided mode (13) and the Quick tour (4.14)
      ====================================================================== */
-  function nowrap(s) { return s; }
-  var STEPS = [
-    { n: 1, go: function () { UI.show('evidence'); return '[data-chart="1"]'; },
-      text: function () { return '<strong>The situation.</strong> ' + N(D.fleet.robots, 'int') + ' robots at ' + N(D.fleet.sites, 'int') + ' sites. Robots spend ' + N(D.fleet.shareMoving, 'pct0') + ' of scheduled time moving, ' + N(D.fleet.shareCharging, 'pct0') + ' charging and ' + N(D.fleet.shareFailure, 'pct0') + ' failing (Analysis 1). Charging, not failure, is the larger loss.'; } },
-    { n: 2, go: function () { UI.show('start'); return '#roles'; },
-      text: function () { return '<strong>Who feels it.</strong><ul class="small"><li>Operations head: pallet moves and customers at risk.</li><li>Floor supervisor and operators: walk-ups to stopped robots.</li><li>Site IT: Wi-Fi and integrations blamed first.</li><li>Field technician and support: long trips, no-fault-found tickets.</li><li>Deployment engineer: glare doors, narrow aisles, site layout.</li><li>Product and engineering: what to build first.</li></ul>Use "View as" in the top bar to see each one\'s panel.'; } },
-    { n: 3, go: function () { UI.setWarehouse('A'); UI.show('explore'); return '#map-title'; },
-      text: function () { var s = site('S08'); return '<strong>Warehouse A (S08, 24x7).</strong> It charges ' + N(s.chargingShare, 'pct1') + ' of scheduled time and had ' + N(s.lowBatteryStops, 'int') + ' emergency low-battery stops in 30 days (' + N(s.lowBatteryPerRobot, 'f2') + ' per robot). Robots that run around the clock never get to rest.'; } },
-    { n: 4, go: function () { UI.setWarehouse('B'); UI.show('explore'); return '#map-title'; },
-      text: function () { var s = site('S12'); return '<strong>Contrast: Warehouse B (S12, 16x7).</strong> Charging ' + N(s.chargingShare, 'pct1') + ', ' + N(s.lowBatteryStops, 'int') + ' stops. It rests overnight and already has ' + N(s.idleShare, 'pct1') + ' idle time: charging binds only at the 24-hour sites (the counter-pattern).'; } },
-    { n: 5, go: function () { UI.show('evidence'); return '[data-chart="2"]'; },
-      text: function () { return '<strong>The loudest failure is not the costliest.</strong> Docking is ' + N(D.fleet.dockingShareOfIncidents, 'pct0') + ' of incidents but ' + N(D.fleet.dockingShareOfDowntimeHours, 'pct0') + ' of hours; technician repairs are ' + N(D.fleet.technicianShareOfIncidents, 'pct0') + ' of incidents but ' + N(D.fleet.technicianShareOfDowntimeHours, 'pct0') + ' of hours.'; } },
-    { n: 6, go: function () { UI.openScenario('U1'); setTimeout(function () { window.Scenarios.runPipeline(); }, 300); return '#side'; },
-      text: function () { return '<strong>Warehouse C: glare doors.</strong> A docking timeout at Bay 2 at 15:42. Watch the pipeline: fault record, model proposal, deterministic check, PASS, the robot moves. ' + N(D.recoveryDist.auto.median, 'f0') + ' min instead of ' + N(D.recoveryDist.operator.median, 'f1') + ' min for an operator walk-up (illustrative).'; } },
-    { n: 7, go: function () { UI.openScenario('U1'); setTimeout(function () { var b = $('[data-variant="fail"]'); if (b) b.click(); setTimeout(function () { window.Scenarios.runPipeline(); }, 200); }, 200); return '#side'; },
-      text: function () { return '<strong>Make the check fail.</strong> The proposal backs up at 0.6 m/s; the limit is 0.3 m/s. The check fails, the standard recovery is tried, and one screen offers a corrected proposal. One click approves it.'; } },
-    { n: 8, go: function () { UI.openScenario('U2'); return '#side'; },
-      text: function () { return '<strong>Something in front of the robot.</strong> Pick the box, the spilled pallet or the curtain, then press Run. The vision model names it and the action depends on what it is. It never overrides the safety layer.'; } },
-    { n: 9, go: function () { UI.openScenario('U4'); setTimeout(function () { window.Scenarios.runPipeline(); }, 300); return '#side'; },
-      text: function () { return '<strong>Offline changes.</strong> A glare fix passes both gates and ships via a canary. Then pick "Blocked at Gate 1": the charge-threshold edit reaches the safety floor and is blocked. <strong>Software cannot remove the charging loss.</strong>'; } },
-    { n: 10, go: function () { UI.openScenario('U9'); setTimeout(function () { window.Scenarios.runPipeline(); }, 300); return '#side'; },
-      text: function () { return '<strong>The safety stop is refused.</strong> The model proposes shrinking the protective field; the check refuses it. Only a person at the robot can reset a safety stop.'; } },
-    { n: 11, go: function () { UI.openScenario('U5'); return '#side'; },
-      text: function () { return '<strong>A typed instruction and a business goal.</strong> U5 turns a sentence into checked commands; try the chips that fail. Then open <button class="linkish" onclick="UI.openScenario(\'U6\')">U6: task planning</button>.'; } },
-    { n: 12, go: function () { UI.openScenario('U7'); return '#side'; },
-      text: function () { return '<strong>Triage across the fleet.</strong> ' + N(D.fleet.incidentsNoConfirmedCause, 'pct0') + ' of incidents have no confirmed cause. The model suggests; an engineer confirms in one click. It only reads, so it carries no risk.'; } },
-    { n: 13, go: function () { UI.openScenario('U8'); return '#side'; },
-      text: function () { return '<strong>Battery swap on Warehouse A.</strong> Move the spare-pack slider to 0 and back: with no charged pack waiting, robots fall back to the charger and flat stops return. Then <button class="linkish" onclick="UI.show(\'game\')">run a week in Game mode</button>. Swap only helps if a charged pack is waiting.'; } },
-    { n: 14, go: function () { UI.show('roadmap'); return '#screen-roadmap .box'; },
-      text: function () { return '<strong>The recommendation.</strong> One improvement: battery swapping with a person doing the swap at the ' + N(D.charging.byPattern['24x7'].sites, 'int') + ' sites that run 24 hours (pilot S08, S21, S22). Then triage, VLM labels and the recovery agent. Deprioritised: task planning, an automated station before phase 1, fixed cameras, LLM code changes, hardware wear, safety stops, Wi-Fi and traffic. What would change my mind: a swap much longer than 10 minutes, far more spare packs than 0.3 per robot, or a pack one person cannot handle safely.' +
-        '<div class="btn-row"><button data-go="explore">Explore</button><button data-go="game">Game</button><button data-go="voice">Voice</button><button data-screen="roadmap">Roadmap</button></div>'; } }
-  ];
-  UI.GUIDE_STEPS = STEPS;
-  var TOUR = [1, 3, 6, 13, 14];
+  /* Chapters replace the spec's 14 steps (changed after review). Every step does its own action, then waits for the reader:
+     nothing advances on a timer. A step with "needs" keeps Next locked until the flow it started has finished or the reader has decided. */
+  function scen(id, variant, run) {
+    UI.openScenario(id);
+    var c = window.Scenarios.current(); c.nextVariant = variant || null; c.id = null; window.Scenarios.renderPlayer($('#side'), id);
+    if (run && id !== 'U7') setTimeout(function () { if (App.guided) window.Scenarios.runPipeline(); }, 400);
+    return '#side';
+  }
+  function pipeDone() { return !!$('#sc-pipe[data-done="1"]'); }
+  var ROLE_TEXT = {
+    ops: 'Operations head: pallet moves and customers at risk. The fleet panel leads with throughput and the three headline numbers.',
+    floor: 'Floor supervisor and operators: walk-ups to stopped robots. The panel lists stopped robots with a Recover button each.',
+    it: 'Site IT: Wi-Fi and integrations get blamed first. The panel shows network and integration signals next to the stops.',
+    tech: 'Field technician and support: long trips and no-fault-found tickets. The panel is a triage list of what needs hands.',
+    deploy: 'Deployment engineer: glare doors, narrow aisles and layout. The panel shows the site conditions behind the stops.',
+    product: 'Product and engineering: what to build first. The panel shows the RICE table and the roadmap.'
+  };
+  var CHAPTERS = ['The situation', 'Who feels it', 'The three warehouses', 'How a fix works', 'Level-1 recovery', 'Changes and limits', 'Instructions and planning', 'Predict', 'The recommendation'];
+  var STEPS = [];
+  function step(ch, o) { o.ch = ch; STEPS.push(o); }
+  // 1. The situation: the six Evidence charts
+  step(1, { go: function () { UI.show('evidence'); return '[data-chart="1"]'; },
+    text: function () { return '<strong>Where robot time goes.</strong> ' + N(D.fleet.robots, 'int') + ' robots at ' + N(D.fleet.sites, 'int') + ' sites spend ' + N(D.fleet.shareMoving, 'pct0') + ' of scheduled time moving, ' + N(D.fleet.shareCharging, 'pct0') + ' charging and ' + N(D.fleet.shareFailure, 'pct0') + ' failing (Analysis 1). Charging, not failure, is the larger loss.'; } });
+  step(1, { go: function () { UI.show('evidence'); return '[data-chart="2"]'; },
+    text: function () { return '<strong>The loudest failure is not the costliest.</strong> Docking is ' + N(D.fleet.dockingShareOfIncidents, 'pct0') + ' of incidents but ' + N(D.fleet.dockingShareOfDowntimeHours, 'pct0') + ' of hours; technician repairs are ' + N(D.fleet.technicianShareOfIncidents, 'pct0') + ' of incidents but ' + N(D.fleet.technicianShareOfDowntimeHours, 'pct0') + ' of hours.'; } });
+  step(1, { go: function () { UI.show('evidence'); return '[data-chart="3"]'; },
+    text: function () { var c = D.charging.byPattern; return '<strong>Charging by shift pattern.</strong> The 24-hour sites charge ' + N(c['24x7'].share, 'pct1') + ' of scheduled time against ' + N(c['16x6'].share, 'pct1') + ' at 16x6 sites, and stop flat ' + N(c['24x7'].stopsPerRobot, 'f2') + ' times per robot. A rest-deficit problem, not an LLM problem.'; } });
+  step(1, { go: function () { UI.show('evidence'); return '[data-chart="4"]'; },
+    text: function () { return '<strong>Firmware or site?</strong> Docking timeouts per 100 robot-days: ' + N(D.firmwareAvg.glare, 'f1') + ' at glare-door sites against ' + N(D.firmwareAvg.elsewhere, 'f1') + ' elsewhere, on every release. Compare within a column before blaming firmware.'; } });
+  step(1, { go: function () { UI.show('evidence'); return '[data-chart="5"]'; },
+    text: function () { var c = D.charging; return '<strong>Ageing packs.</strong> ' + N(c.weakPacks, 'int') + ' weak packs: ' + N(c.lowBatteryStopsPerRobotWeak, 'f2') + ' low-battery stops per robot against ' + N(c.lowBatteryStopsPerRobotHealthy, 'f2') + '. A case for swapping and replacing packs.'; } });
+  step(1, { go: function () { UI.show('evidence'); return '[data-chart="6"]'; },
+    text: function () { return '<strong>What the three fix levels could reach.</strong> Level 1 (runtime recovery) reaches ' + N(D.levels[0].downtimeH, 'f0', { suffix: ' h' }) + ' of downtime, level 2 ' + N(D.levels[1].downtimeH, 'f0', { suffix: ' h' }) + '. Level 3 (node code) cannot be sized, and the safety layer is never editable by a model.'; } });
+  // 2. Who feels it: one step per role
+  ROLES.forEach(function (r) {
+    step(2, { go: function () { UI.setWarehouse('A'); UI.setRole(r.id); App.sel = null; UI.show('explore'); return '#side'; },
+      text: function () { return '<strong>View as: ' + esc(r.name) + '.</strong> ' + esc(ROLE_TEXT[r.id]) + ' The same switch is "View as" in the top bar.'; } });
+  });
+  // 3. The three warehouses, then the fleet
+  step(3, { go: function () { UI.setRole('ops'); UI.setWarehouse('A'); App.sel = null; UI.show('explore'); return '#map-title'; },
+    text: function () { var s = site('S08'); return '<strong>Warehouse A (S08, 24x7, brownfield, 2.4 m aisles).</strong> It charges ' + N(s.chargingShare, 'pct1') + ' of scheduled time and had ' + N(s.lowBatteryStops, 'int') + ' emergency low-battery stops in 30 days (' + N(s.lowBatteryPerRobot, 'f2') + ' per robot). Robots that run around the clock never get to rest.'; } });
+  step(3, { go: function () { UI.setWarehouse('B'); App.sel = null; UI.show('explore'); return '#map-title'; },
+    text: function () { var s = site('S12'); return '<strong>Contrast: Warehouse B (S12, 16x7).</strong> Charging ' + N(s.chargingShare, 'pct1') + ', ' + N(s.lowBatteryStops, 'int') + ' stops. It rests overnight and already has ' + N(s.idleShare, 'pct1') + ' idle time: charging binds only at the 24-hour sites.'; } });
+  step(3, { go: function () { UI.setWarehouse('C'); App.sel = null; UI.show('explore'); return '#map-title'; },
+    text: function () { var s = site('S20'); return '<strong>Warehouse C (S20, 16x6): glare doors.</strong> Bays 1 to 4 face low sun from 14:00 to 17:00 (Planted_patterns tab), and docking timeouts pile up there. Charging is ' + N(s.chargingShare, 'pct1') + ' of scheduled time.'; } });
+  step(3, { go: function () { UI.show('fleet'); return '.tiles'; },
+    text: function () { return '<strong>The fleet.</strong> ' + N(D.charging.byPattern['24x7'].sites, 'int') + ' of ' + N(D.fleet.sites, 'int') + ' sites run 24 hours (bold outline). Every tile opens that site\'s 30-day history.'; } });
+  step(3, { go: function () { UI.show('site', { site: 'S21' }); return '#screen-site .sh-table'; },
+    text: function () { return '<strong>One site\'s history (S21).</strong> Every robot, its pack health and what it did each day. Click a robot for its timeline and any single day hour by hour. Facts only: positions are not in the data, so there is no replay of paths.'; } });
+  // 4. How a fix works
+  step(4, { go: function () { UI.show('how'); return '#screen-how .diagram'; },
+    text: function () { return '<strong>How a fix works.</strong> Fault record, model proposal, deterministic check, then the robot or a person. Each box says what it is: ' + htmlKind('LLM') + ' ' + htmlKind('VLM') + ' are models, ' + htmlKind('CODE') + ' is plain rules. Click any box for what goes in and out.'; } });
+  step(4, { go: function () { UI.show('arch'); return '#screen-arch svg'; },
+    text: function () { return '<strong>Where each piece runs.</strong> On the robot, at the site and in Botsync\'s cloud. The safety layer stays on the robot and takes no input from any model.'; } });
+  // 5. Level-1 recovery
+  step(5, { go: function () { return scen('U1', 'pass', true); }, needs: pipeDone,
+    text: function () { return '<strong>U1: glare docking, the check passes.</strong> Watch each box run; every step stays listed under the flowchart. ' + N(D.recoveryDist.auto.median, 'f0') + ' min instead of ' + N(D.recoveryDist.operator.median, 'f1') + ' min for an operator walk-up (illustrative). Next unlocks when the flow finishes.'; } });
+  step(5, { go: function () { return scen('U1', 'fail', true); }, needs: pipeDone,
+    text: function () { return '<strong>U1: make the check fail.</strong> The proposal backs up at 0.6 m/s; the limit is 0.3 m/s. When the approval screen appears, <strong>press Approve</strong> (or try Edit with an out-of-range value: it is refused). Next unlocks after your decision.'; } });
+  step(5, { go: function () { return scen('U2', 'box', true); }, needs: pipeDone,
+    text: function () { return '<strong>U2: something in front of the robot.</strong> The vision model names a box, so the robot drives around it. Try the other variants afterwards: a spill needs a person; a curtain only needs a wait.'; } });
+  step(5, { go: function () { return scen('U3', null, true); }, needs: pipeDone,
+    text: function () { return '<strong>U3: dirty lidar window.</strong> Software cannot wipe a lens. When the approval screen asks, <strong>press Approve</strong> to confirm the label; the robot drives to the service bay and an operator cleans it.'; } });
+  // 6. Changes and limits
+  step(6, { go: function () { return scen('U4', 'pass', true); }, needs: pipeDone,
+    text: function () { return '<strong>U4: an offline change that passes.</strong> A glare fix goes through Gate 1 and Gate 2, then a canary at one site before release.'; } });
+  step(6, { go: function () { return scen('U4', 'g1', true); }, needs: pipeDone,
+    text: function () { return '<strong>U4: blocked at Gate 1.</strong> Lowering the charge threshold reaches the safety floor. <strong>Press Reject</strong> (or Approve to send it to engineering). Software cannot remove the charging loss.'; } });
+  step(6, { go: function () { return scen('U4', 'g2', true); }, needs: pipeDone,
+    text: function () { return '<strong>U4: blocked at Gate 2.</strong> A model-drafted change to node code fails the offline checks (replay, boundary cases, regression suite). <strong>Decide on the approval screen</strong>; a failed change never reaches a robot.'; } });
+  step(6, { go: function () { return scen('U9', null, true); }, needs: pipeDone,
+    text: function () { return '<strong>U9: the safety stop is refused.</strong> The model proposes shrinking the protective field; the check refuses it. <strong>Press Close: refused.</strong> Only a person at the robot can reset a safety stop.'; } });
+  // 7. Instructions and planning
+  step(7, { go: function () { return scen('U5', null, true); }, needs: pipeDone,
+    text: function () { return '<strong>U5: a typed instruction.</strong> A supervisor\'s sentence becomes checked commands. Afterwards, try the chips that fail (a closed bay, a nonsense request).'; } });
+  step(7, { go: function () { return scen('U6', null, true); }, needs: pipeDone,
+    text: function () { return '<strong>U6: task planning from a business goal.</strong> The model drafts a plan; the hard-limit check tests batteries and charger slots before any mission starts.'; } });
+  step(7, { go: function () { return scen('U7', null, false); }, needs: pipeDone,
+    text: function () { return '<strong>U7: triage across the fleet.</strong> ' + N(D.fleet.incidentsNoConfirmedCause, 'pct0') + ' of incidents have no confirmed cause. The model suggests; an engineer confirms in one click. It only reads, so it moves no robot.'; } });
+  step(7, { go: function () { return scen('U10', null, true); }, needs: pipeDone,
+    text: function () { return '<strong>U10: the vision path.</strong> Capture, blur faces, the server model labels the frame, a person confirms. <strong>Press Approve</strong> to confirm the label; it joins the evaluation set.'; } });
+  step(7, { go: function () { return scen('V', 'p1', true); }, needs: pipeDone,
+    text: function () { return '<strong>V: voice from a phone.</strong> "Bot 5 is stuck at dock 2, recover it." The phone shows the conversation; the pipeline on the right shows every step. Try the other phrases: one asks to confirm, one is refused.'; } });
+  // 8. Predict
+  step(8, { go: function () { if (window.Predict) window.Predict.reset(); UI.show('predict'); return '#screen-predict .p-cut'; },
+    text: function () { return '<strong>Predict: the data can say what is likely next.</strong> ' + (window.Predict ? window.Predict.caption() : ''); } });
+  // 9. The recommendation
+  step(9, { go: function () { return scen('U8', null, false); },
+    text: function () { return '<strong>U8: battery swap on Warehouse A.</strong> Move the spare-pack slider to 0 and back: with no charged pack waiting, robots fall back to the charger and flat stops return. Swap only helps if a charged pack is waiting.'; } });
+  step(9, { go: function () { UI.setWarehouse('A'); UI.show('game'); setTimeout(function () { var b = $('#g-run'); if (b && App.guided) b.click(); }, 400); return '#side'; },
+    text: function () { return '<strong>A week in Game mode.</strong> A simulated week at Warehouse A, Today against the policy you switch on. Press Skip to the end for the scoreboard. Simulated direction, not a forecast.'; } });
+  step(9, { go: function () { UI.show('roadmap'); return '#screen-roadmap .box'; },
+    text: function () { return '<strong>The recommendation.</strong> One improvement: battery swapping with a person doing the swap at the ' + N(D.charging.byPattern['24x7'].sites, 'int') + ' sites that run 24 hours (pilot S08, S21, S22). Then triage, VLM labels and the recovery agent. Deprioritised: task planning, an automated station before phase 1, fixed cameras, LLM code changes, hardware wear, safety stops, Wi-Fi and traffic. What would change my mind: a swap much longer than 10 minutes, far more spare packs than 0.3 per robot, or a pack one person cannot handle safely.' +
+      '<div class="btn-row"><button data-go="explore">Explore</button><button data-go="game">Game</button><button data-go="voice">Voice</button><button data-screen="predict">Predict</button><button data-screen="roadmap">Roadmap</button></div>'; } });
+  STEPS.forEach(function (s, i) { var k = STEPS.filter(function (x, j) { return x.ch === s.ch && j <= i; }).length; s.k = k; s.id = s.ch + '.' + k; s.n = i + 1; });
+  UI.GUIDE_STEPS = STEPS; UI.GUIDE_CHAPTERS = CHAPTERS;
+  // Quick tour (about 2 minutes): one step from chapters 1, 3, 5, 8 and 9
+  var TOUR = ['1.1', '3.1', '5.1', '8.1', '9.3'];
+  function stepById(id) { return STEPS.filter(function (s) { return s.id === id; })[0]; }
+  function chCount(ch) { return STEPS.filter(function (s) { return s.ch === ch; }).length; }
+  var needTimer = 0;
   function guideBar() {
     var g = App.guided, bar = $('#guide-bar');
+    clearInterval(needTimer);
     $$('.guide-hl').forEach(function (e) { e.classList.remove('guide-hl'); });
     if (!g) { bar.hidden = true; bar.innerHTML = ''; measureTop(); return; }
+    var st = stepById(g.list[g.i]);
     if (g.paused) {
-      bar.hidden = false; bar.innerHTML = '<div class="gtext">Guided story paused at step ' + g.list[g.i] + ' of 14.</div><div class="gbtns"><button id="g-return">Return to the guided story</button><button id="g-end">End</button></div>';
+      bar.hidden = false; bar.innerHTML = '<div class="gtext">Guided story paused at chapter ' + st.ch + ', step ' + st.k + '.</div><div class="gbtns"><button id="g-return">Return to the guided story</button><button id="g-end">End</button></div>';
       $('#g-return').onclick = function () { g.paused = false; gotoStep(g.i); }; $('#g-end').onclick = function () { UI.stopGuided(); };
       measureTop(); return;
     }
-    var st = STEPS[g.list[g.i] - 1];
+    var count = g.kind === 'tour' ? 'Quick tour: ' + (g.i + 1) + ' of ' + g.list.length + ' · chapter ' + st.ch + ', ' + esc(CHAPTERS[st.ch - 1])
+      : 'Chapter ' + st.ch + ' of ' + CHAPTERS.length + ': ' + esc(CHAPTERS[st.ch - 1]) + ' · step ' + st.k + ' of ' + chCount(st.ch);
+    var pick = g.kind === 'tour' ? '' : '<select id="g-chapter" aria-label="Jump to a chapter">' + CHAPTERS.map(function (c, i) { return '<option value="' + (i + 1) + '"' + (i + 1 === st.ch ? ' selected' : '') + '>' + (i + 1) + '. ' + esc(c) + '</option>'; }).join('') + '</select>';
     bar.hidden = false;
-    bar.innerHTML = '<div class="gtext" data-step="' + st.n + '"><div class="gcount">' + (g.kind === 'tour' ? 'Quick tour: ' + (g.i + 1) + ' of ' + g.list.length + ' (guided step ' + st.n + ' of 14)' : 'Step ' + st.n + ' of 14') + '</div>' + st.text() + '</div>' +
-      '<div class="gbtns"><button id="g-back"' + (g.i === 0 ? ' disabled' : '') + '>Back</button><button class="primary" id="g-next"' + (g.i === g.list.length - 1 ? ' disabled' : '') + '>Next</button><button id="g-leave">Leave to Explore</button></div>';
+    bar.innerHTML = '<div class="gtext" data-step="' + st.id + '"><div class="gcount">' + count + '</div>' + st.text() + '<div class="gwait small" id="g-wait"></div></div>' +
+      '<div class="gbtns"><button id="g-back"' + (g.i === 0 ? ' disabled' : '') + '>Back</button><button class="primary" id="g-next"' + (g.i === g.list.length - 1 ? ' disabled' : '') + '>Next</button>' + pick + '<button id="g-leave">Leave to Explore</button></div>';
     $('#g-back').onclick = function () { gotoStep(g.i - 1); };
     $('#g-next').onclick = function () { gotoStep(g.i + 1); };
     $('#g-leave').onclick = function () { g.paused = true; UI.show('explore'); guideBar(); };
+    var cp = $('#g-chapter'); if (cp) cp.onchange = function () { var ch = +cp.value; for (var i = 0; i < g.list.length; i++) if (stepById(g.list[i]).ch === ch) { gotoStep(i); break; } };
+    if (st.needs && g.i < g.list.length - 1) {
+      var nx = $('#g-next'), w = $('#g-wait');
+      var check = function () { var done = st.needs(); nx.disabled = !done; w.innerHTML = done ? '' : 'Next unlocks when this flow finishes. <button class="linkish" id="g-skip">Skip</button>'; var sk = $('#g-skip'); if (sk) sk.onclick = function () { gotoStep(g.i + 1); }; if (done) clearInterval(needTimer); };
+      check(); needTimer = setInterval(function () { if (App.guided !== g || !$('#g-next')) { clearInterval(needTimer); return; } check(); }, 400);
+    }
     measureTop();
   }
   function gotoStep(i) {
     var g = App.guided; if (!g) return;
     g.i = Math.max(0, Math.min(g.list.length - 1, i));
-    var st = STEPS[g.list[g.i] - 1];
-    App.guidedStep = st.n; App.guidedVisited = App.guidedVisited || []; App.guidedVisited.push(st.n);
+    var st = stepById(g.list[g.i]);
+    App.guidedStep = st.id; App.guidedVisited = App.guidedVisited || []; App.guidedVisited.push(st.id);
     var hl = st.go();
     guideBar();
     setTimeout(function () { var el = hl && $(hl); if (el) el.classList.add('guide-hl'); var nx = $('#g-next'); if (nx && !nx.disabled) nx.focus(); }, 60);
     $$('#topbar [data-mode]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.mode === 'guided')); });
   }
   UI.startGuided = function (kind) {
-    App.guided = { kind: kind, list: kind === 'tour' ? TOUR.slice() : STEPS.map(function (s) { return s.n; }), i: 0 };
+    App.guided = { kind: kind, list: kind === 'tour' ? TOUR.slice() : STEPS.map(function (s) { return s.id; }), i: 0 };
     App.guidedVisited = [];
     gotoStep(0);
   };
   UI.stopGuided = function () { if (!App.guided) return; App.guided = null; guideBar(); };
   UI.guideNext = function () { if (App.guided) gotoStep(App.guided.i + 1); };
+  UI.guideGoto = gotoStep;
 
   /* ---------------- boot ---------------- */
   function boot() {

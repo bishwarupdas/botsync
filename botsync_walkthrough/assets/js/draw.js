@@ -561,6 +561,7 @@
   function defsSvg() {
     return '<defs>' +
       '<pattern id="pat-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#FCFBF8"/><line x1="0" y1="0" x2="0" y2="6" stroke="' + C.teal + '" stroke-width="2"/></pattern>' +
+      '<pattern id="pat-band" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)"><rect width="8" height="8" fill="#F5F4F0"/><line x1="0" y1="0" x2="0" y2="8" stroke="#2B2D31" stroke-width="1.4"/></pattern>' +
       '<pattern id="pat-redx" width="7" height="7" patternUnits="userSpaceOnUse"><rect width="7" height="7" fill="#FCFBF8"/><path d="M0 0 L7 7 M7 0 L0 7" stroke="' + C.red + '" stroke-width="1.2"/></pattern>' +
       '</defs>';
   }
@@ -660,7 +661,7 @@
 
   /* The list of asset functions (checked by acceptance test 18 against section 7A) */
   var Draw = {
-    CONFIG: CONFIG, COLORS: C, mulberry32: mulberry32, ROBOT_STATES: ROBOT_STATES, PALLET_VARIANTS: PALLET_VARIANTS,
+    CONFIG: CONFIG, COLORS: C, patFill: patFill, mulberry32: mulberry32, ROBOT_STATES: ROBOT_STATES, PALLET_VARIANTS: PALLET_VARIANTS,
     CAMERA_SCENES: CAMERA_SCENES, TIME_PATTERNS: TIME_PATTERNS, esc: esc, text: text, hatch: hatch, defsSvg: defsSvg,
     // A1
     drawRobot: drawRobot, drawBatteryBar: drawBatteryBar,
