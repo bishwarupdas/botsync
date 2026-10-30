@@ -77,7 +77,8 @@
   UI.register = function (name, fn) { renderers[name] = fn; };
   UI.show = function (screen, opts) {
     opts = opts || {};
-    if (screen === 'explore' || screen === 'game' || screen === 'voice') { App.mode = screen; screen = 'work'; }
+    if (screen === 'voice') { UI.openScenario('V'); return; }   // voice plays as scenario V in the scenario player
+    if (screen === 'explore' || screen === 'game') { App.mode = screen; screen = 'work'; }
     if (UI.Pipeline) UI.Pipeline.cancelAll();
     App.screen = screen;
     document.body.classList.toggle('on-work', screen === 'work');
@@ -452,15 +453,24 @@
     $('#map-note').innerHTML = App.mode === 'game' ? 'time-lapse of the simulated week' : 'demo speed: 1 s = ' + CONFIG.simSecondsPerScreenSecond + ' simulated s at 1x; stops far more often than in the data';
     $('#map-foot').innerHTML = 'Aisle widths to scale (min ' + N(site.aisleMin, 'raw', { suffix: ' m' }) + '), lengths schematic. Chargers: 1 per ' + N(D.assumed.robotsPerCharger, 'int', { noTag: true }) + ' robots ' + tag('assumed') + ' (no charger inventory in the data).' + (wh.glare ? ' Glare on Bays 1-4, 14:00-17:00 (Planted_patterns tab).' : '');
     $('#strip').hidden = App.mode === 'game';
-    $('.work').classList.toggle('voice', App.mode === 'voice'); $('#phone-col').hidden = App.mode !== 'voice';
+    voiceLayout();
     sizeMap(); renderStrip();
   }
   UI.renderWorkFrame = renderWorkFrame;
+  /* scenario V shows the phone in its own column between the map and the panel */
+  function voiceLayout() {
+    var on = App.screen === 'work' && App.mode === 'explore' && !!(App.sel && App.sel.type === 'scenario' && (App.sel.id === 'V' || App.sel.id === 'voice'));
+    var w = $('.work'); if (!w || w.classList.contains('voice') === on) return;
+    w.classList.toggle('voice', on); $('#phone-col').hidden = !on; if (!on) $('#phone-col').innerHTML = '';
+    sizeMap();
+  }
+  UI.voiceLayout = voiceLayout;
 
   function renderSide() {
     if (App.mode !== 'explore' || App.screen !== 'work') return;
     UI.Pipeline.cancelAll();
     var side = $('#side');
+    voiceLayout();
     if (App.sel && App.sel.type === 'scenario') { window.Scenarios.renderPlayer(side, App.sel.id); return; }
     if (App.sel && App.sel.type === 'robot') { renderRobotPanel(side, App.sel.i); return; }
     renderFleetPanel(side);
@@ -736,28 +746,56 @@
     stt: ['Speech to text', 'small in-house model'], intent: ['Model reads intent', 'scripted JSON'], reply: ['Reply to the phone', 'text and a spoken line'],
     gate1: ['Gate 1', 'allowlist, schema, range, safety'], gate2: ['Gate 2 (offline)', 'replay, boundary, suite, latency'], release: ['Canary, then release', 'one site first']
   };
-  function svgPipeline(layout, states, labels) {
+  /* what kind of thing each box is (LLM, VLM, CODE, ROBOT, PERSON, DATA, SPEECH) and who does it; spec.kinds / spec.who override per scenario */
+  var BOX_KIND = { diagnose: 'CODE', propose: 'LLM', check: 'CODE', execute: 'ROBOT', person: 'PERSON', log: 'DATA', stt: 'SPEECH', intent: 'LLM', reply: 'CODE', gate1: 'CODE', gate2: 'CODE', release: 'CODE' };
+  var BOX_WHO = {
+    diagnose: 'Fleet manager software joins the incident, recent events and the camera frame into one record. No model.',
+    propose: 'A small self-hosted LLM picks actions from an allowed list. The VLM label is one of its inputs.',
+    check: 'Plain rules owned by engineering: allowlist, schema, ranges, safety. No model.',
+    execute: 'A ROS 2 action on the robot. The safety layer stays outside and cannot be overridden.',
+    person: 'An operator, supervisor or engineer decides: approve, edit or reject.',
+    log: 'Rows written to recovery attempts, change requests or the evaluation set.',
+    stt: 'A small in-house speech model turns the recording into text.',
+    intent: 'A small LLM turns the text into commands (scripted JSON here).',
+    reply: 'Plain code sends text and a spoken line back to the phone.',
+    gate1: 'Plain rules at runtime: allowlist, schema, range, safety. No model.',
+    gate2: 'Offline replay, boundary cases, regression suite and latency, run by engineering.',
+    release: 'Release tooling: one canary site first, then the rest.'
+  };
+  UI.BOX_KIND = BOX_KIND; UI.BOX_WHO = BOX_WHO;
+  function boxKind(id, kinds) { return kinds && kinds.hasOwnProperty(id) ? kinds[id] : BOX_KIND[id]; }
+  function htmlKind(kind) {
+    if (!kind) return '';
+    return String(kind).split('+').map(function (k) { return '<span class="kchip" data-kind="' + esc(k) + '" style="background:' + (Draw.KIND_COL[k] || '#4A4D55') + '">' + esc(k) + '</span>'; }).join('');
+  }
+  UI.htmlKind = htmlKind;
+  function svgPipeline(layout, states, labels, kinds) {
     var L = LAYOUTS[layout], s = '<svg viewBox="0 0 470 ' + L.h + '" role="img" aria-label="pipeline flowchart">';
     L.arrows.forEach(function (a) { var dim = !(states[a[0]] && states[a[0]].state !== 'idle' && states[a[1]] && states[a[1]].state !== 'idle'); s += Draw.svgArrow(a[2], a[3], { dim: dim, labelAt: a[4] }); });
     Object.keys(L.boxes).forEach(function (id) {
       var p = L.boxes[id], st = states[id] || { state: 'idle' }, t = (labels && labels[id]) || BOX_TEXT[id];
-      s += Draw.svgPipelineBox({ id: id, x: p[0], y: p[1], title: t[0], sub: t[1], state: st.state, status: st.status, person: id === 'person' });
+      s += Draw.svgPipelineBox({ id: id, x: p[0], y: p[1], title: t[0], sub: t[1], state: st.state, status: st.status, person: id === 'person', kind: boxKind(id, kinds) });
     });
     return s + '</svg>';
   }
   function wait(ms) { return new Promise(function (res) { setTimeout(res, ms); }); }
+  App.pipeStepMode = false;
   function pipeSleep(ms, ctrl) {
-    // honours Pause (speed 0) and the Step button; scales with speed
+    // honours Pause (speed 0), Step mode (waits for "Next box") and the Next box button; scales with speed
     return new Promise(function (res) {
       var left = ms;
       (function tick() {
         if (ctrl.cancelled) return res();
         if (ctrl.stepReq) { ctrl.stepReq = false; return res(); }
-        if (App.speed > 0) left -= 50 * App.speed;
+        if (App.speed > 0 && !App.pipeStepMode) left -= 50 * App.speed;
         if (left <= 0) return res();
         setTimeout(tick, 50);
       })();
     });
+  }
+  function scrollParent(el) {
+    for (var e = el.parentElement; e; e = e.parentElement) { var o = getComputedStyle(e).overflowY; if ((o === 'auto' || o === 'scroll') && e.scrollHeight > e.clientHeight) return e; }
+    return document.scrollingElement;
   }
   UI.Pipeline = {
     LAYOUTS: LAYOUTS,
@@ -769,23 +807,72 @@
       UI.Pipeline.active = []; App.pipelineRunning = false;
     },
     run: function (container, spec) {
-      var ctrl = { visited: [], states: {}, cancelled: false, stepReq: false, decisions: [], transcript: [], onCancel: spec.onCancel };
+      var ctrl = { visited: [], states: {}, cancelled: false, stepReq: false, decisions: [], transcript: [], onCancel: spec.onCancel, cards: [] };
       UI.Pipeline.active.push(ctrl);
       if (container._pipe) container._pipe.cancelled = true;
+      // spec.keepPrevious: a follow-up run keeps the earlier run (folded) above the new one, so nothing the reader saw is lost
+      var prevHtml = '';
+      if (spec.keepPrevious) {
+        $$('details.pipe-prev', container).forEach(function (d) { prevHtml += d.outerHTML; });
+        var old = $('.pipeline', container);
+        if (old) prevHtml += '<details class="pipe-prev"><summary>Earlier run: ' + esc($('h3', old).textContent) + ' (' + $$('.pcard', old).length + ' steps). Click to open.</summary>' +
+          old.outerHTML.replace(/ id="/g, ' data-old-id="').replace(/class="(pipeline|approval|pipe-result|pipe-svg|pipe-controls|pipe-now)"/g, 'class="$1-old"') + '</details>';
+      }
       container._pipe = ctrl; container.removeAttribute('data-done'); container.removeAttribute('data-visited');
-      var layout = spec.layout || 'fix';
-      container.innerHTML = '<div class="pipeline" data-pipeline="' + layout + '"><div class="panel-title"><h3>' + esc(spec.title || 'Pipeline') + ' ' + (spec.scripted !== false ? tag('scripted') : '') + '</h3></div>' +
-        '<div class="pipe-controls"><button class="pipe-step">Step</button><span class="small">Pause in the top bar freezes the flow; Step moves one box.</span></div>' +
-        '<div class="pipe-svg"></div><div class="pipe-io"></div><div class="pipe-extra"></div><div class="pipe-approval"></div><div class="pipe-result"></div></div>';
-      var svgEl = $('.pipe-svg', container), io = $('.pipe-io', container), extra = $('.pipe-extra', container), resEl = $('.pipe-result', container);
-      $('.pipe-step', container).onclick = function () { ctrl.stepReq = true; };
-      function draw() { svgEl.innerHTML = svgPipeline(layout, ctrl.states, spec.labels); container.setAttribute('data-visited', ctrl.visited.join(',')); }
+      var layout = spec.layout || 'fix', labels = spec.labels || {}, kinds = spec.kinds, who = spec.who || {};
+      container.innerHTML = prevHtml + '<div class="pipeline" data-pipeline="' + layout + '"><div class="panel-title"><h3>' + esc(spec.title || 'Pipeline') + ' ' + (spec.scripted !== false ? tag('scripted') : '') + '</h3></div>' +
+        '<div class="pipe-controls"><span class="seg-group" role="group" aria-label="pacing"><button class="pipe-mode seg" data-mode="auto">Auto</button><button class="pipe-mode seg" data-mode="step">Step</button></span>' +
+        '<button class="pipe-step">Next box</button><span class="small pipe-hint"></span></div>' +
+        '<div class="pipe-now" aria-live="polite"></div>' +
+        '<div class="pipe-svg" title="Click a box that has run to jump to its step below"></div>' +
+        '<details class="pipe-key small"><summary>What do the labels LLM, VLM, CODE, ROBOT, PERSON, DATA mean?</summary><ul>' + ['LLM', 'VLM', 'SPEECH', 'CODE', 'ROBOT', 'PERSON', 'DATA'].map(function (k) { return '<li>' + htmlKind(k) + ' ' + esc(UI.KIND_TEXT[k]) + '</li>'; }).join('') + '</ul></details>' +
+        '<div class="pipe-history-head small">Steps so far (each step stays here; click a box above to jump to it)</div>' +
+        '<ol class="pipe-history"></ol><div class="pipe-result"></div></div>';
+      $$('details.pipe-prev button, details.pipe-prev input, details.pipe-prev select', container).forEach(function (b) { b.disabled = true; });
+      var root = $('.pipeline', container);
+      var svgEl = $('.pipe-svg', root), hist = $('.pipe-history', root), nowEl = $('.pipe-now', root), resEl = $('.pipe-result', root);
+      function modeUI() {
+        $$('.pipe-mode', root).forEach(function (b) { var on = (b.getAttribute('data-mode') === 'step') === App.pipeStepMode; b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
+        $('.pipe-hint', root).textContent = App.pipeStepMode ? 'Step mode: each box waits for "Next box".' : 'Auto: each box holds for 2.5 s after its text (at 1x). Pause in the top bar freezes the flow.';
+      }
+      $$('.pipe-mode', root).forEach(function (b) { b.onclick = function () { App.pipeStepMode = b.getAttribute('data-mode') === 'step'; modeUI(); }; });
+      modeUI();
+      $('.pipe-step', root).onclick = function () { ctrl.stepReq = true; };
+      // the reader scrolled up to re-read: stop following new steps for a while
+      var follow = true, followT = 0;
+      container.addEventListener('wheel', function (e) { if (e.deltaY < 0) { follow = false; clearTimeout(followT); followT = setTimeout(function () { follow = true; }, 6000); } }, { passive: true });
+      svgEl.addEventListener('click', function (e) {
+        var g = e.target.closest && e.target.closest('g[data-box]'); if (!g) return;
+        var id = g.getAttribute('data-box'), c = null;
+        ctrl.cards.forEach(function (k) { if (k.box === id) c = k; });
+        if (!c) return;
+        follow = false; clearTimeout(followT); followT = setTimeout(function () { follow = true; }, 6000);
+        c.el.scrollIntoView({ block: 'nearest', behavior: App.reducedMotion ? 'auto' : 'smooth' });
+        c.el.classList.remove('flash'); void c.el.offsetWidth; c.el.classList.add('flash');
+      });
+      function draw() { svgEl.innerHTML = svgPipeline(layout, ctrl.states, labels, kinds); container.setAttribute('data-visited', ctrl.visited.join(',')); }
       draw();
       function typeOut(el, text) {
         return new Promise(function (res) {
           if (App.reducedMotion || !text) { el.textContent = text || ''; return res(); }
-          var i = 0; (function t() { if (ctrl.cancelled) return res(); var cps = CONFIG.typewriterCps * Math.max(1, App.speed || 1); i = Math.min(text.length, i + Math.max(1, Math.round(cps / 20))); el.textContent = text.slice(0, i); if (i >= text.length) return res(); setTimeout(t, App.speed === 0 ? 120 : 50); })();
+          var i = 0; (function t() { if (ctrl.cancelled) { el.textContent = text; return res(); } var cps = Math.max(CONFIG.typewriterCps, text.length / CONFIG.typewriterMaxSec) * Math.max(1, App.speed || 1); i = Math.min(text.length, i + Math.max(1, Math.round(cps / 20))); el.textContent = text.slice(0, i); if (i >= text.length) return res(); setTimeout(t, App.speed === 0 ? 120 : 50); })();
         });
+      }
+      function chipHtml(st) { return st && st.status ? '<span class="chip chip-' + st.status + '">' + st.status + '</span>' : ''; }
+      function setCard(c, st) { c.el.setAttribute('data-state', st.state); $('.pcard-status', c.el).innerHTML = chipHtml(st); }
+      function addCard(step) {
+        var t = labels[step.box] || BOX_TEXT[step.box], n = ctrl.cards.length + 1, k = boxKind(step.box, kinds);
+        var el = document.createElement('li'); el.className = 'pcard current'; el.setAttribute('data-box', step.box); el.setAttribute('data-n', n);
+        el.innerHTML = '<div class="pcard-head"><span class="pcard-n">' + n + '</span><strong>' + esc(t[0]) + '</strong> ' + htmlKind(k) + '<span class="pcard-status"></span></div>' +
+          '<div class="pcard-who small">' + esc(who[step.box] || BOX_WHO[step.box] || t[1] || '') + '</div>' +
+          Draw.htmlIOPanel(step['in'] || '', '') + '<div class="pcard-extra pipe-extra"></div><div class="pcard-approval pipe-approval"></div>';
+        ctrl.cards.forEach(function (c) { c.el.classList.remove('current'); });
+        hist.appendChild(el);
+        var c = { box: step.box, el: el, n: n }; ctrl.cards.push(c);
+        nowEl.innerHTML = '<span class="pcard-n">' + n + '</span> Now: <strong>' + esc(t[0]) + '</strong> ' + htmlKind(k);
+        if (spec.onStep) spec.onStep(n, t[0], k);
+        if (follow) { var sp = scrollParent(container); if (sp) { var r = el.getBoundingClientRect(), pr = sp === document.scrollingElement ? { top: 0, bottom: window.innerHeight } : sp.getBoundingClientRect(); if (r.bottom > pr.bottom || r.top < pr.top) el.scrollIntoView({ block: 'nearest', behavior: App.reducedMotion ? 'auto' : 'smooth' }); } }
+        return c;
       }
       function runSteps(steps) {
         var p = Promise.resolve();
@@ -798,14 +885,15 @@
             ctrl.states[step.box] = { state: 'active', status: step.status === 'WAITING' ? 'WAITING' : (step.status ? step.status : 'INFO') };
             if (step.box === 'person') ctrl.states.person.state = 'waiting';
             draw();
-            io.innerHTML = Draw.htmlIOPanel(step['in'] || '', '');
-            if (step.gates) extra.innerHTML = '<h4>' + esc(step.gatesTitle || 'Checks') + '</h4>' + Draw.htmlGateList(step.gates); else if (!step.keepExtra) extra.innerHTML = '';
+            var card = addCard(step), extra = $('.pcard-extra', card.el);
+            setCard(card, step.box === 'person' ? { state: 'waiting', status: 'WAITING' } : { state: 'active', status: '' });
+            if (step.gates) extra.innerHTML = '<h4>' + esc(step.gatesTitle || 'Checks') + '</h4>' + Draw.htmlGateList(step.gates);
             if (step.onEnter) step.onEnter(ctrl, extra);
-            return typeOut($('.io-out', io), step.out || '').then(function () {
+            return typeOut($('.io-out', card.el), step.out || '').then(function () {
               if (step.waitFor) {
                 return step.waitFor(ctrl).then(function (dec) {
                   ctrl.decisions.push(dec);
-                  ctrl.states[step.box] = { state: dec === 'reject' || dec === 'no' ? 'failed' : 'done', status: dec === 'reject' || dec === 'no' ? 'FAIL' : 'PASS' }; draw();
+                  ctrl.states[step.box] = { state: dec === 'reject' || dec === 'no' ? 'failed' : 'done', status: dec === 'reject' || dec === 'no' ? 'FAIL' : 'PASS' }; draw(); setCard(card, ctrl.states[step.box]);
                   var next = (step.branch && step.branch[dec]) || [];
                   if (typeof next === 'function') next = next(dec);
                   return runSteps(next);
@@ -813,21 +901,21 @@
               }
               if (step.approval) {
                 return new Promise(function (res) {
-                  var box = document.createElement('div'); $('.pipe-approval', container).appendChild(box);
+                  var box = document.createElement('div'); $('.pcard-approval', card.el).appendChild(box);
                   UI.approval(box, step.approval, function (dec) {
                     ctrl.decisions.push(dec.kind);
-                    ctrl.states.person = { state: dec.kind === 'reject' ? 'failed' : 'done', status: dec.kind === 'reject' ? 'FAIL' : 'PASS' }; draw();
+                    ctrl.states.person = { state: dec.kind === 'reject' ? 'failed' : 'done', status: dec.kind === 'reject' ? 'FAIL' : 'PASS' }; draw(); setCard(card, ctrl.states.person);
                     var next = (step.branch && (step.branch[dec.kind] || step.branch.approve)) || [];
                     if (typeof next === 'function') next = next(dec);
                     res(runSteps(next));
                   });
                 });
               }
-              return pipeSleep(CONFIG.pipelineBoxMs, ctrl).then(function () {
+              return pipeSleep(CONFIG.pipelineHoldMs, ctrl).then(function () {
                 var fail = step.status === 'FAIL';
                 ctrl.states[step.box] = { state: fail ? 'failed' : 'done', status: step.status || 'INFO' };
                 if (step.box === 'person' && step.status !== 'FAIL') ctrl.states.person = { state: 'done', status: step.status || 'PASS' };
-                draw();
+                draw(); setCard(card, ctrl.states[step.box]);
                 if (step.onDone) step.onDone(ctrl, extra);
               });
             });
@@ -837,6 +925,8 @@
       }
       ctrl.done = runSteps(spec.steps).then(function () {
         if (ctrl.cancelled) return ctrl;
+        ctrl.cards.forEach(function (c) { c.el.classList.remove('current'); });
+        nowEl.innerHTML = 'Finished: ' + ctrl.cards.length + ' steps. All of them stay listed below.';
         var r = typeof spec.result === 'function' ? spec.result(ctrl) : spec.result;
         if (r) { resEl.innerHTML = '<div class="result-box ' + (r.cls || '') + '" data-result="' + esc(r.key || '') + '">' + r.html + '</div>'; }
         container.setAttribute('data-done', '1'); ctrl.finished = true;
@@ -921,6 +1011,7 @@
     requestAnimationFrame(frame);
   });
   UI.openScenario = function (id) {
+    if (id === 'voice') id = 'V';
     if (App.screen !== 'work' || App.mode !== 'explore') UI.show('explore');
     App.sel = { type: 'scenario', id: id }; renderSide();
   };
@@ -1014,7 +1105,7 @@
     var s = '<svg viewBox="0 0 640 ' + h + '" role="group" aria-label="' + esc(id) + ' diagram">';
     arrows.forEach(function (a) { s += Draw.svgArrow(a[0], a[1], { labelAt: a[2] }); });
     boxes.forEach(function (b) {
-      s += '<g class="clickable" tabindex="0" role="button" data-explain="' + esc(b.id) + '" aria-label="' + esc(b.title) + '">' + Draw.svgPipelineBox({ id: b.id, x: b.x, y: b.y, title: b.title, sub: b.sub, state: 'plain', person: b.person }) + '</g>';
+      s += '<g class="clickable" tabindex="0" role="button" data-explain="' + esc(b.id) + '" aria-label="' + esc(b.title) + '">' + Draw.svgPipelineBox({ id: b.id, x: b.x, y: b.y, title: b.title, sub: b.sub, state: 'plain', person: b.person, kind: b.kind }) + '</g>';
     });
     return s + '</svg>';
   }
@@ -1032,20 +1123,27 @@
     'vis-person': '<strong>Person confirms.</strong> An engineer confirms or corrects the label. The model matches people 81% of the time in the dummy set; glare vs dirty sensor is the weak spot.',
     'vis-eval': '<strong>Evaluation set.</strong> Confirmed labels become the test the model must pass before it is trusted further.'
   });
+  var FIX_SUB = { diagnose: 'fleet manager; no model', propose: 'small self-hosted LLM', check: 'Gate 1 / Gate 2; no model', execute: 'ROS 2 action on the robot', person: 'only on FAIL or at a limit', log: 'attempts, changes, eval set' };
+  var KIND_TEXT = { LLM: 'a language model. It only proposes; it never acts on its own.', VLM: 'a vision-language model. It names what a camera sees; advice only.', SPEECH: 'a speech-to-text model.', CODE: 'plain software with fixed rules. No model.', ROBOT: 'the robot or the fleet manager doing it.', PERSON: 'a person decides.', DATA: 'a record that is stored and reused.' };
+  UI.KIND_TEXT = KIND_TEXT;
+  function kindKey() {
+    return '<div class="kind-key box"><h3>What the labels on the boxes mean</h3><ul>' + ['LLM', 'VLM', 'SPEECH', 'CODE', 'ROBOT', 'PERSON', 'DATA'].map(function (k) { return '<li>' + htmlKind(k) + ' ' + esc(KIND_TEXT[k]) + '</li>'; }).join('') + '</ul><p class="small">The same labels appear on every live flowchart (Recover, the scenarios and voice), so you can always tell which steps are models and which are plain code.</p></div>';
+  }
+  UI.kindKey = kindKey;
   UI.register('how', function () {
     var fb = D.flowBoxes, pos = { diagnose: [20, 10], propose: [20, 100], check: [20, 190], execute: [20, 280], person: [300, 190], log: [20, 370] };
-    var fix = diagram('fix flow', fb.map(function (b) { return { id: 'fix-' + b.id, x: pos[b.id][0], y: pos[b.id][1], title: b.title, sub: b.id === 'check' ? 'Gate 1 / Gate 2' : b.id === 'person' ? 'only on FAIL or at a limit' : '', person: b.id === 'person' }; }),
+    var fix = diagram('fix flow', fb.map(function (b) { return { id: 'fix-' + b.id, x: pos[b.id][0], y: pos[b.id][1], title: b.title, sub: FIX_SUB[b.id], kind: BOX_KIND[b.id], person: b.id === 'person' }; }),
       [[[[115, 80], [115, 100]]], [[[115, 170], [115, 190]]], [[[115, 260], [115, 280]], 'pass', [140, 270]], [[[115, 350], [115, 370]]], [[[210, 225], [300, 225]], 'fail', [255, 216]], [[[395, 260], [395, 315], [210, 315]], 'approve', [330, 306]], [[[490, 225], [560, 225], [560, 405], [210, 405]], 'reject', [520, 396]]], 450);
-    var plan = diagram('task planning', [{ id: 'plan-goal', x: 20, y: 10, title: 'Business goal', sub: 'plain words' }, { id: 'plan-model', x: 20, y: 100, title: 'Model plans', sub: 'batches, robots, charge slots' }, { id: 'plan-check', x: 20, y: 190, title: 'Hard-limit check', sub: 'deterministic' }, { id: 'plan-person', x: 300, y: 190, title: 'Person approves', sub: 'only close to a limit', person: true }, { id: 'plan-run', x: 20, y: 280, title: 'Missions run', sub: 'planned vs actual stored' }],
+    var plan = diagram('task planning', [{ id: 'plan-goal', x: 20, y: 10, title: 'Business goal', sub: 'a supervisor, plain words', kind: 'PERSON' }, { id: 'plan-model', x: 20, y: 100, title: 'Model plans', sub: 'batches, robots, charge slots', kind: 'LLM' }, { id: 'plan-check', x: 20, y: 190, title: 'Hard-limit check', sub: 'plain rules; no model', kind: 'CODE' }, { id: 'plan-person', x: 300, y: 190, title: 'Person approves', sub: 'only close to a limit', person: true, kind: 'PERSON' }, { id: 'plan-run', x: 20, y: 280, title: 'Missions run', sub: 'planned vs actual stored', kind: 'ROBOT' }],
       [[[[115, 80], [115, 100]]], [[[115, 170], [115, 190]]], [[[115, 260], [115, 280]], 'pass', [140, 270]], [[[210, 225], [300, 225]], 'close', [255, 216]], [[[395, 260], [395, 315], [210, 315]], 'approve', [330, 306]]], 360);
-    var vis = diagram('vision path', [{ id: 'vis-capture', x: 20, y: 10, title: 'Capture a frame', sub: 'robot camera now' }, { id: 'vis-blur', x: 20, y: 100, title: 'Blur faces, badges', sub: 'before storage' }, { id: 'vis-model', x: 20, y: 190, title: 'Server model names it', sub: 'advisory' }, { id: 'vis-person', x: 300, y: 190, title: 'Person confirms', sub: 'or corrects', person: true }, { id: 'vis-eval', x: 300, y: 280, title: 'Evaluation set', sub: 'labelled examples' }],
+    var vis = diagram('vision path', [{ id: 'vis-capture', x: 20, y: 10, title: 'Capture a frame', sub: 'robot camera now', kind: 'ROBOT' }, { id: 'vis-blur', x: 20, y: 100, title: 'Blur faces, badges', sub: 'before storage; no model', kind: 'CODE' }, { id: 'vis-model', x: 20, y: 190, title: 'Server model names it', sub: 'small self-hosted VLM', kind: 'VLM' }, { id: 'vis-person', x: 300, y: 190, title: 'Person confirms', sub: 'or corrects', person: true, kind: 'PERSON' }, { id: 'vis-eval', x: 300, y: 280, title: 'Evaluation set', sub: 'labelled examples', kind: 'DATA' }],
       [[[[115, 80], [115, 100]]], [[[115, 170], [115, 190]]], [[[210, 225], [300, 225]]], [[[395, 260], [395, 280]]]], 360);
     $('#screen-how').innerHTML = '<div class="page"><h2>How it works</h2><p>The three diagrams from the case. Click a box (or Tab to it and press Enter) for a short explanation. These are static; the live version is the flowchart that runs when you press Recover.</p>' +
-      '<div class="cols"><div class="diagram box"><h3>1. The fix flow</h3>' + fix + '<div class="small"><strong>Three levels:</strong><ul>' + D.fixLevelsText.map(function (l) { return '<li><strong>' + l.level + ':</strong> ' + esc(l.text) + '</li>'; }).join('') + '</ul>The safety layer is never editable by a model.</div></div>' +
+      '<div class="cols"><div class="diagram box"><h3>1. The fix flow</h3>' + fix + '<div class="small"><strong>Three levels:</strong><ul>' + D.fixLevelsText.map(function (l) { return '<li><strong>' + l.level + ':</strong> ' + esc(l.text) + '</li>'; }).join('') + '</ul>The safety layer is never editable by a model.</div>' + kindKey() + '</div>' +
       '<div><div class="explain" id="explain" aria-live="polite">Click a box to see what goes in, what comes out, and who is responsible.</div>' +
       '<div class="diagram box"><h3>2. Task planning</h3>' + plan + '</div><div class="diagram box"><h3>3. The vision path</h3>' + vis + '</div></div></div></div>';
     $$('#screen-how [data-explain]').forEach(function (g) {
-      var act = function () { $('#explain').innerHTML = EXPLAIN[g.dataset.explain] || ''; $$('#screen-how [data-explain] rect').forEach(function (r) { r.setAttribute('stroke-width', '1'); }); g.querySelector('rect').setAttribute('stroke-width', '3'); };
+      var act = function () { var k = g.querySelector('.kind-chip'); $('#explain').innerHTML = (k ? '<p class="small">What it is: ' + htmlKind(k.getAttribute('data-kind')) + ' ' + esc(KIND_TEXT[k.getAttribute('data-kind')] || '') + '</p>' : '') + (EXPLAIN[g.dataset.explain] || ''); $$('#screen-how [data-explain] rect').forEach(function (r) { r.setAttribute('stroke-width', '1'); }); g.querySelector('rect').setAttribute('stroke-width', '3'); };
       g.addEventListener('click', act); g.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); act(); } });
     });
   });

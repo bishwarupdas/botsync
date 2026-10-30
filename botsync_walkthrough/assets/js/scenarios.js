@@ -381,7 +381,7 @@
         window.App.overlays.routes = routes;
       }
       if (!cmds.length) {
-        return { title: 'U5 pipeline (nothing valid)', layout: 'fix', labels: { diagnose: ['Read the instruction', 'typed by a supervisor'] }, steps: [
+        return { title: 'U5 pipeline (nothing valid)', layout: 'fix', labels: { diagnose: ['Read the instruction', 'typed by a supervisor'] }, kinds: { diagnose: 'CODE' }, who: { diagnose: 'Plain code takes the supervisor\'s typed text and the current robot states. No model yet.' }, steps: [
           { box: 'diagnose', status: 'INFO', 'in': 'typed instruction', out: '"' + raw + '"' },
           { box: 'propose', status: 'FAIL', 'in': 'instruction + list of allowed commands', out: 'nothing valid: no robot or bay found\nschema check: FAIL -> reject proposal' },
           { box: 'person', status: 'WAITING', 'in': 'rejected proposal', out: 'the supervisor is asked to retype',
@@ -398,7 +398,7 @@
         steps.push({ box: 'check', status: 'PASS', 'in': 'typed commands', out: 'PASS: all checks pass', gates: checks, gatesTitle: 'Deterministic checks' },
           { box: 'execute', status: 'PASS', 'in': 'commands', out: 'robots move: route lines updated on the map', onEnter: function () { apply(cmds); } },
           { box: 'log', status: 'INFO', 'in': 'outcome', out: 'command logged with who, when and the result' });
-        return { title: 'U5 pipeline', layout: 'fix', labels: { diagnose: ['Read the instruction', 'typed by a supervisor'] }, steps: steps,
+        return { title: 'U5 pipeline', layout: 'fix', labels: { diagnose: ['Read the instruction', 'typed by a supervisor'] }, kinds: { diagnose: 'CODE' }, who: { diagnose: 'Plain code takes the supervisor\'s typed text and the current robot states. No model yet.' }, steps: steps,
           result: { key: 'U5-ok', cls: 'ok', html: '<strong class="state-ok">PASS.</strong> Instruction applied in one step; checks run before the robots move.' } };
       }
       var p0 = problems[0] || { c: { to: '?' }, why: 'no valid command', rule: 'schema' };
@@ -415,7 +415,7 @@
         var fixed = cmds.map(function (c) { return c === p0.c ? Object.assign({}, c, { to: dec.value }) : c; }).filter(function (c) { return wh.station(c.to) && !window.App.overlays.closed[c.to]; });
         return [{ box: 'execute', status: 'PASS', 'in': JSON.stringify(fixed), out: 'robots move to ' + dec.value, onEnter: function () { apply(fixed); } }, { box: 'log', status: 'INFO', 'in': 'outcome', out: 'logged; the correction is stored as a label' }];
       }
-      return { title: 'U5 pipeline (check fails)', layout: 'fix', labels: { diagnose: ['Read the instruction', 'typed by a supervisor'] }, steps: steps,
+      return { title: 'U5 pipeline (check fails)', layout: 'fix', labels: { diagnose: ['Read the instruction', 'typed by a supervisor'] }, kinds: { diagnose: 'CODE' }, who: { diagnose: 'Plain code takes the supervisor\'s typed text and the current robot states. No model yet.' }, steps: steps,
         result: function (ctrl) { var rej = ctrl.decisions[0] === 'reject'; return { key: isMissing ? 'U5-b14' : 'U5-b1', cls: rej ? 'refused' : 'ok', html: '<strong class="state-stopped">FAIL:</strong> ' + UI.esc(p0.why) + '. ' + (rej ? 'Blocked; no robot moved.' : 'Fixed with one click; instruction applied; checks ran before the robots moved.') }; } };
     } });
 
@@ -455,7 +455,7 @@
               approve: [{ box: 'execute', status: 'PASS', 'in': 'revised plan', out: 'missions start with an extra charge slot for Bot 7', onEnter: function () { var g = document.getElementById('u6-gantt'); if (g) g.innerHTML = gantt(true); startPlan(); } }, { box: 'log', status: 'INFO', 'in': 'outcome', out: 'decision and plan stored' }],
               reject: [{ box: 'log', status: 'INFO', 'in': 'rejected', out: 'blocked; the supervisor plans by hand' }] } });
       }
-      return { title: 'U6 pipeline', layout: 'fix', labels: { diagnose: ['Goal in', 'business goal, scripted'], check: ['Hard-limit check', 'deterministic'], execute: ['Missions start', 'fleet manager'] }, steps: steps,
+      return { title: 'U6 pipeline', layout: 'fix', labels: { diagnose: ['Goal in', 'business goal, scripted'], check: ['Hard-limit check', 'deterministic'], execute: ['Missions start', 'fleet manager'] }, kinds: { diagnose: 'DATA', propose: 'LLM', check: 'CODE', execute: 'ROBOT' }, who: { diagnose: 'A supervisor\'s business goal plus robot states, batteries and charging windows.', propose: 'A small self-hosted LLM drafts the mission plan.', check: 'Plain rules: battery floors, charger slots, robot limits. No model.', execute: 'The fleet manager starts the missions on the robots.' }, steps: steps,
         result: function (ctrl) {
           var pv = window.Draw.svgComparisonBars([{ a: 175, b: 168, aText: 'planned 175 min', bText: 'actual 168 min', diffText: '' }, { a: 120, b: 120, aText: 'planned 120 pallets', bText: 'actual 120 pallets', diffText: '' }], { width: 420 });
           var rej = ctrl.decisions[0] === 'reject';
@@ -514,7 +514,7 @@
       });
     },
     spec: function () {
-      return { title: 'U7 pipeline', layout: 'fix', labels: { execute: ['Nothing executes', 'reads and suggests only'] }, steps: [
+      return { title: 'U7 pipeline', layout: 'fix', labels: { execute: ['Nothing executes', 'reads and suggests only'] }, kinds: { execute: '' }, who: { execute: 'Triage only reads logs and suggests a cause. No robot moves.' }, steps: [
         { box: 'diagnose', status: 'INFO', 'in': '12 incidents, no confirmed cause', out: 'fault records with evidence (station flags, timestamps, repeats, pack health)' },
         { box: 'propose', status: 'PASS', 'in': 'records', out: 'a likely cause, the evidence used and a confidence per incident (table below)' },
         { box: 'check', status: 'PASS', 'in': 'suggestions', out: 'PASS: read-only output; schema valid; no action on any robot' },
@@ -569,7 +569,7 @@
     spec: function () {
       function cam(showVlm) { var c = document.getElementById('u10-cam'); if (!c) return; var ctx = c.getContext('2d'); ctx.setTransform(1, 0, 0, 1, 0, 0); window.Draw.drawCameraScene(ctx, 0, 0, 0, 'fallen_box', { time: '15:42', vlm: VLM.fallen_box, showVlm: showVlm }); }
       function blur(st) { var c = document.getElementById('u10-blur'); if (!c) return; var ctx = c.getContext('2d'); window.Draw.drawBlurDemo(ctx, 0, 0, 0, st, {}); }
-      return { title: 'U10 vision path', layout: 'voice', labels: { stt: ['Capture a frame', 'robot front camera'], intent: ['Blur faces, badges', 'before storage'], check: ['Server model names it', 'small self-hosted VLM'], execute: ['Label stored', 'advisory only'], person: ['Person confirms', 'or corrects'], reply: ['Joins the eval set', 'labelled example'] },
+      return { title: 'U10 vision path', layout: 'voice', labels: { stt: ['Capture a frame', 'robot front camera'], intent: ['Blur faces, badges', 'before storage'], check: ['Server model names it', 'small self-hosted VLM'], execute: ['Label stored', 'advisory only'], person: ['Person confirms', 'or corrects'], reply: ['Joins the eval set', 'labelled example'] }, kinds: { stt: 'ROBOT', intent: 'CODE', check: 'VLM', execute: 'DATA', person: 'PERSON', reply: 'DATA' }, who: { stt: 'The robot\'s front camera takes one frame at the incident.', intent: 'Plain image code blurs faces and badges before anything is stored. No model decides this.', check: 'A small self-hosted VLM names what is in the frame, with a confidence.', execute: 'The label is stored next to the incident. It is advice only; it moves nothing.', person: 'An operator confirms the label or corrects it.', reply: 'The labelled frame joins the evaluation set used to test the next model.' },
         steps: [
           { box: 'stt', status: 'INFO', 'in': 'incident ERR_OBSTACLE_PERSISTENT_BLOCK', out: 'frame captured (front camera)', onEnter: function () { cam(false); blur('before'); } },
           { box: 'intent', status: 'PASS', 'in': 'frame', out: 'faces and badges blurred before storage', onEnter: function () { blur('after'); } },
@@ -582,8 +582,9 @@
         result: { key: 'U10', cls: 'ok', html: 'Frame to label to evaluation set, with faces blurred and a person in the loop. Customer pictures stay on Botsync-controlled machines.' } };
     } });
 
-  var ORDER = ['U1', 'U2', 'U3', 'U4', 'U5', 'U6', 'U7', 'U8', 'U9', 'U10'];
-  var list = ORDER.map(function (id) { return { id: id, short: SC[id].short }; }).concat([{ id: 'voice', short: 'Voice from a phone' }]);
+  /* V (voice from a phone) is registered by voice.js; it plays in this same player */
+  var ORDER = ['U1', 'U2', 'U3', 'U4', 'U5', 'U6', 'U7', 'U8', 'U9', 'U10', 'V'];
+  function list() { return ORDER.filter(function (id) { return SC[id]; }).map(function (id) { return { id: id, short: SC[id].short }; }); }
 
   /* ---------- scenario player (9.0) ---------- */
   var cur = { id: null, variant: null, robot: null };
@@ -594,7 +595,7 @@
     cur.id = null;
   }
   function renderPlayer(side, id) {
-    if (id === 'voice') { UI.show('voice'); return; }
+    if (id === 'voice') id = 'V';
     var sc = SC[id], A = window.App;
     if (cur.id !== id) {
       stopScenario();
@@ -602,11 +603,15 @@
       if (sc.wh && (sc.wh !== A.wh || !A.live || A.live.wh.id !== sc.wh)) { UI.setWarehouse(sc.wh, true); UI.newLive(); A.sel = { type: 'scenario', id: id }; UI.renderWorkFrame(); }
       prepare(sc);
     }
-    var idx = ORDER.indexOf(id);
-    side.innerHTML = '<div data-panel="scenario" data-scenario="' + id + '"><div class="panel-title"><h2>' + UI.esc(sc.title) + '</h2><button class="panel-close" data-close="1">Back to fleet (Esc)</button></div>' +
+    var idx = ORDER.indexOf(id), prev = ORDER[idx - 1], next = ORDER[idx + 1];
+    var nav = '<div class="sc-nav"><button id="sc-prev"' + (prev ? '' : ' disabled') + '>&#8592; Prev' + (prev ? ' (' + prev + ')' : '') + '</button>' +
+      '<label class="sc-pick-l">Scenario <select id="sc-pick" aria-label="Jump to a scenario">' + list().map(function (s, k) { return '<option value="' + s.id + '"' + (s.id === id ? ' selected' : '') + '>' + (k + 1) + '. ' + UI.esc(s.short) + '</option>'; }).join('') + '</select></label>' +
+      '<span class="sc-count small">' + (idx + 1) + ' of ' + ORDER.length + '</span>' +
+      '<button id="sc-next"' + (next ? '' : ' disabled') + '>Next' + (next ? ' (' + next + ')' : '') + ' &#8594;</button></div>';
+    side.innerHTML = '<div data-panel="scenario" data-scenario="' + id + '"><div class="panel-title"><h2>' + UI.esc(sc.title) + '</h2><button class="panel-close" data-close="1">Back to fleet (Esc)</button></div>' + nav +
       '<p>' + UI.esc(sc.shows) + '</p>' +
       (sc.variants ? '<div class="variants" role="group" aria-label="Variant">' + sc.variants.map(function (v) { return '<button class="seg" data-variant="' + v.id + '" aria-pressed="' + (v.id === cur.variant) + '">' + UI.esc(v.label) + '</button>'; }).join('') + '</div>' : '') +
-      '<div class="btn-row">' + (sc.noPipeline ? '' : '<button class="primary" id="sc-run">' + (cur.robot ? 'Recover' : 'Run') + '</button>') + '<button id="sc-replay">Replay</button><button id="sc-next">Next scenario' + (idx < ORDER.length - 1 ? ' (' + ORDER[idx + 1] + ')' : ' (voice)') + '</button></div>' +
+      '<div class="btn-row">' + (sc.noPipeline ? '' : '<button class="primary" id="sc-run">' + (sc.runLabel || (cur.robot ? 'Recover' : 'Run')) + '</button>') + '<button id="sc-replay">Replay</button></div>' +
       '<div id="sc-body"></div><div id="sc-pipe"></div></div>';
     var body = document.getElementById('sc-body');
     var bodyHtml = sc.body ? sc.body.call(sc, cur.robot, cur.variant) : '';
@@ -620,7 +625,10 @@
     if (sc.bind) sc.bind.call(sc, body);
     var run = document.getElementById('sc-run'); if (run) run.onclick = function () { runPipeline(); };
     document.getElementById('sc-replay').onclick = function () { cur.id = null; renderPlayer(side, id); };
-    document.getElementById('sc-next').onclick = function () { UI.openScenario(idx < ORDER.length - 1 ? ORDER[idx + 1] : 'voice'); };
+    document.getElementById('sc-next').onclick = function () { if (next) UI.openScenario(next); };
+    document.getElementById('sc-prev').onclick = function () { if (prev) UI.openScenario(prev); };
+    document.getElementById('sc-pick').onchange = function () { UI.openScenario(this.value); };
+    var vb = document.querySelector('#topbar [data-screen="voice"]'); if (vb) vb.classList.toggle('on', id === 'V');
     $$(side, '[data-variant]').forEach(function (b) { b.onclick = function () { cur.nextVariant = b.dataset.variant; var keep = cur.id; cur.id = null; renderPlayer(side, keep); }; });
     if (id === 'U7') runPipeline();
   }
@@ -635,6 +643,7 @@
   function runPipeline() {
     var sc = SC[cur.id]; if (!sc || sc.noPipeline) return Promise.resolve();
     var run = document.getElementById('sc-run'); if (run) run.disabled = true;
+    if (sc.run) return sc.run.call(sc, cur.variant).then(function (c) { var b = document.getElementById('sc-run'); if (b) b.disabled = false; return c; });
     var spec = sc.spec.call(sc, cur.robot, cur.variant);
     spec.title = spec.title || sc.title;
     window.App.pipelineRunning = true;
@@ -660,7 +669,7 @@
   }
 
   window.Scenarios = {
-    VLM: VLM, list: list, ORDER: ORDER, defs: SC, TRIAGE: TRIAGE, incidentInfo: incidentInfo, genericRecover: genericRecover, u9Spec: u9Spec,
+    VLM: VLM, get list() { return list(); }, ORDER: ORDER, register: function (id, d) { d.id = id; SC[id] = d; }, defs: SC, TRIAGE: TRIAGE, incidentInfo: incidentInfo, genericRecover: genericRecover, u9Spec: u9Spec,
     renderPlayer: renderPlayer, stop: stopScenario, runAuto: runAuto, runPipeline: runPipeline, current: function () { return cur; },
     refresh: function () { var el = document.querySelector('[data-live="swapReadout"]'); if (el && cur.id === 'U8') { var h = UI.swapReadout(); if (el.innerHTML !== h) el.innerHTML = h; } }
   };

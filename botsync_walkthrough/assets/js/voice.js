@@ -12,16 +12,16 @@
   var V = { messages: [], chips: [], listening: false, confirm: null, busy: false, pending: null };
 
   function setup() {
-    if (App.wh !== 'A' || !App.live || App.live.wh.id !== 'A') { UI.setWarehouse('A', true); UI.newLive(); }
+    if (App.wh !== 'A' || !App.live || App.live.wh.id !== 'A') { UI.setWarehouse('A', true); UI.newLive(); UI.renderWorkFrame(); }
     var S = App.live, wh = S.wh;
-    App.scenarioActive = true; App.sel = null;
+    App.scenarioActive = true;
     S.robots.forEach(function (r) { if (r.state === 'stopped' && r.incident && !r.incident.scripted) r.timer = 0.01; });
     // Bot 5 stuck at Bay 1 (a dock door); Bot 3 in a safety stop with a person in the field
     place(S.robots[4], wh.station('Bay 1').node); open(S.robots[4], 'ERR_DOCKING_ALIGNMENT_TIMEOUT', 'Bay 1');
     var n3 = wh.station('Bay 9').node; place(S.robots[2], n3); open(S.robots[2], 'ERR_SAFETY_LIDAR_ESTOP', null);
     App.overlays.objects = [{ kind: 'person', x: wh.nodes[n3].x + 40, y: wh.nodes[n3].y - 4 }];
     V.messages = [{ who: 'bot', text: 'Fleet assistant for Warehouse A (S08). Tap the microphone and pick a phrase.', caption: 'scripted' }];
-    V.chips = []; V.confirm = null; V.listening = false; V.busy = false;
+    V.chips = []; V.confirm = null; V.listening = false; V.busy = false; V.step = '';
   }
   function place(r, node) {
     var S = App.live, nd = S.wh.nodes[node];
@@ -34,18 +34,21 @@
     Sim.openIncident(App.live, r, { code: code, recov: 'operator', down: D.recoveryDist.operator.median.v, uAgent: 1, uGate: 1, uConfirm: 1, uTriage: 1, holdForUser: true, scripted: true, station: station }, 'idle');
   }
 
-  function render() {
-    UI.renderWorkFrame();
+  /* scenario V: the phone sits in its own column (#phone-col) next to the scenario player */
+  function bodyHtml() {
+    return '<p>Bot 5 is stuck at Bay 1 (a dock door); Bot 3 is in a safety stop with a person nearby. Pick a phrase above and press <strong>Say it</strong>, or tap the microphone on the phone (left of this panel) and choose any phrase. The answer appears on the phone; each pipeline step stays listed below.</p>';
+  }
+  function phoneCol() {
+    UI.voiceLayout();
     var col = document.getElementById('phone-col');
-    col.innerHTML = '<div id="phone-holder">' + phoneHtml() + '</div>' +
+    col.innerHTML = '<div id="phone-holder">' + phoneHtml() + '</div><p class="v-step small" id="v-step" aria-live="polite"></p>' +
       '<p class="small">In the real version, speech is turned into text by a small model Botsync hosts. Browser speech services are not used because they send audio to an outside provider.</p>' +
       '<div class="box risks"><h3>Risks</h3><ul><li>Noisy floor: a misheard robot number. A confirm step for multi-robot or non-reversible actions.</li><li>Who is allowed to command: sign-in on the phone, role limits.</li><li>A command must never bypass the check.</li><li>Log every command with who, when and the result.</li></ul></div>';
-    document.getElementById('side').innerHTML = '<div data-panel="voice"><div class="panel-title"><h2>Voice from a phone</h2><button class="panel-close" id="v-reset">Reset scene</button></div><p>A supervisor handles failures by voice without walking to a screen. Bot 5 is stuck at Bay 1 (a dock door); Bot 3 is in a safety stop.</p><div id="v-pipe"></div></div>';
-    document.getElementById('v-reset').onclick = function () { setup(); render(); };
-    bindPhone();
   }
+  function render() { UI.openScenario('V'); }
+  function stepLine() { var e = document.getElementById('v-step'); if (e) e.innerHTML = V.step ? 'Pipeline (right): ' + V.step : 'The pipeline on the right shows each step as it runs; every step stays listed.'; }
   function phoneHtml() { return Draw.htmlPhoneMock({ messages: V.messages, chips: V.chips, listening: V.listening, confirm: V.confirm, reducedMotion: App.reducedMotion, micDisabled: V.busy }); }
-  function refreshPhone() { var h = document.getElementById('phone-holder'); if (!h) return; h.innerHTML = phoneHtml(); bindPhone(); var chat = h.querySelector('.phone-chat'); if (chat) chat.scrollTop = chat.scrollHeight; }
+  function refreshPhone() { var h = document.getElementById('phone-holder'); if (!h) return; h.innerHTML = phoneHtml(); bindPhone(); var chat = h.querySelector('.phone-chat'); if (chat) chat.scrollTop = chat.scrollHeight; stepLine(); }
   function bindPhone() {
     var h = document.getElementById('phone-holder'); if (!h) return;
     var mic = h.querySelector('.mic-btn');
@@ -55,7 +58,7 @@
       setTimeout(function () { V.listening = false; V.chips = PHRASES.slice(); V.chipMode = 'phrase'; refreshPhone(); var c = document.querySelector('.phrase-chip'); if (c) c.focus(); }, 1200);
     };
     h.querySelectorAll('.phrase-chip').forEach(function (b) {
-      b.onclick = function () { var i = +b.dataset.phrase; if (V.chipMode === 'robot') chooseRobot(V.chipRobots[i]); else say(i); };
+      b.onclick = function () { var i = +b.dataset.phrase; if (V.chipMode === 'robot') chooseRobot(V.chipRobots[i]); else say(i, true); };
     });
     h.querySelectorAll('[data-confirm]').forEach(function (b) { b.onclick = function () { if (V.pending) { var f = V.pending; V.pending = null; V.confirm = null; V.messages.push({ who: 'user', text: b.dataset.confirm === 'yes' ? 'Yes' : 'No', caption: 'tap' }); refreshPhone(); f(b.dataset.confirm); } }; });
   }
@@ -91,20 +94,27 @@
     return { steps: steps, result: { key: 'V-refused', cls: 'refused', html: '<strong class="state-stopped" data-outcome="refused">Refused.</strong> Matches U9: the safety layer is outside every software level. Nothing changed on the robot.' } };
   }
 
-  function run(text, spec) {
-    V.busy = true; refreshPhone();
-    var all = [stt(text)].concat(spec.steps);
-    return UI.Pipeline.run(document.getElementById('v-pipe'), { title: 'Voice pipeline', layout: 'voice', steps: all, result: spec.result }).then(function () { V.busy = false; refreshPhone(); return App.lastPipeline; });
+  function run(text, spec, keep) {
+    V.busy = true; V.step = ''; refreshPhone();
+    var all = [stt(text)].concat(spec.steps), btn = document.getElementById('sc-run'); if (btn) btn.disabled = true;
+    App.pipelineRunning = true;
+    return UI.Pipeline.run(document.getElementById('sc-pipe'), { title: 'Voice pipeline: "' + text + '"', layout: 'voice', steps: all, result: spec.result, keepPrevious: keep,
+      onStep: function (n, title) { V.step = 'step ' + n + ', ' + title + '.'; stepLine(); } })
+      .then(function () { App.pipelineRunning = false; V.busy = false; V.step = V.step ? V.step.replace(/\.$/, '') + ' (finished).' : ''; refreshPhone(); var b = document.getElementById('sc-run'); if (b) b.disabled = false; return App.lastPipeline; });
   }
-  function say(i) {
+  function say(i, keep) {
     var text = PHRASES[i];
+    var spec = phraseSpec(i, text);
+    return run(text, spec, keep);
+  }
+  function phraseSpec(i, text) {
     V.chips = []; V.messages.push({ who: 'user', text: text, caption: 'speech to text' }); refreshPhone();
     var S = App.live, wh = S.wh;
-    if (i === 0) return run(text, recoverSteps(robotByLabel('Bot 5'), 'Bay 1'));
+    if (i === 0) return recoverSteps(robotByLabel('Bot 5'), 'Bay 1');
     if (i === 1) {
       var cmds = [{ robot: 'Bot 5', action: 'reroute', to: 'Bay 4' }, { action: 'redirect_all', from: 'current drop-offs', to: 'Bay 6' }];
       var rows = gates([['Bay 4 exists and is open', 'PASS', 'open', 'exists, open'], ['Bay 6 exists and is open', 'PASS', 'open', 'exists, open'], ['no other robot\'s route clashes head-on', 'PASS', 'no clash', 'no clash'], ['changes more than one robot: ask to confirm', 'WAITING', 'yes', 'confirm']]);
-      return run(text, { steps: [
+      return { steps: [
         { box: 'intent', status: 'PASS', 'in': 'text', out: cmds.map(function (c) { return JSON.stringify(c); }).join('\n') },
         { box: 'check', status: 'PASS', 'in': 'commands', out: 'PASS; changes more than one robot, so the phone asks to confirm', gates: rows, gatesTitle: 'Deterministic check' },
         { box: 'person', status: 'WAITING', 'in': 'confirm on the phone', out: 'Confirm: send Bot 5 to Bay 4 and all drop-offs to Bay 6?',
@@ -114,26 +124,26 @@
               { box: 'reply', status: 'INFO', 'in': 'done', out: 'Done. Bot 5 is going to Bay 4 and all drop-offs now go to Bay 6.', onEnter: function () { reply('Done. Bot 5 is going to Bay 4 and all drop-offs now go to Bay 6.'); } }],
             no: [{ box: 'reply', status: 'INFO', 'in': 'cancelled', out: 'Cancelled. Nothing changed.', onEnter: function () { reply('Cancelled. Nothing changed.'); } }]
           } }],
-        result: function (ctrl) { var yes = ctrl.decisions[0] === 'yes'; return { key: yes ? 'V-rerouted' : 'V-cancelled', cls: yes ? 'ok' : '', html: yes ? '<strong class="state-ok">Confirmed and applied.</strong> Anything that changes more than one robot always asks to confirm.' : 'Cancelled on the phone; nothing changed.' }; } });
+        result: function (ctrl) { var yes = ctrl.decisions[0] === 'yes'; return { key: yes ? 'V-rerouted' : 'V-cancelled', cls: yes ? 'ok' : '', html: yes ? '<strong class="state-ok">Confirmed and applied.</strong> Anything that changes more than one robot always asks to confirm.' : 'Cancelled on the phone; nothing changed.' }; } };
     }
     if (i === 2) {
       var b3 = robotByLabel('Bot 3');
       var rows3 = gates([['robot exists', 'PASS', 'Bot 3', 'exists'], ['robot is stopped', b3.state === 'stopped' ? 'PASS' : 'FAIL', UI.stateName(b3), 'stopped'], ['action on whitelist', 'FAIL', 'release_estop', 'whitelist'], ['not a safety code', 'FAIL', 'ERR_SAFETY_LIDAR_ESTOP', 'not a safety code']]);
-      return run(text, refuseSteps(b3, [{ box: 'intent', status: 'PASS', 'in': 'text', out: JSON.stringify({ intent: 'release_estop', robot: 'Bot 3' }) }], rows3));
+      return refuseSteps(b3, [{ box: 'intent', status: 'PASS', 'in': 'text', out: JSON.stringify({ intent: 'release_estop', robot: 'Bot 3' }) }], rows3);
     }
     // phrase 4: the model cannot resolve it and asks back
     var stopped = S.robots.filter(function (r) { return r.state === 'stopped'; });
-    return run(text, { steps: [
+    return { steps: [
       { box: 'intent', status: 'FAIL', 'in': 'text', out: JSON.stringify({ intent: 'recover_robot', robot: null, station: 'dock (which one?)' }) + '\nunresolved: no robot named, two dock doors' },
       { box: 'person', status: 'WAITING', 'in': 'unresolved intent', out: 'ask back: "Which robot, and which dock?"',
         onEnter: function () { V.chipMode = 'robot'; V.chipRobots = stopped.map(function (r) { return r.label; }); V.chips = stopped.map(function (r) { return r.label + (r.incident && r.incident.station ? ' at ' + r.incident.station : ''); }); reply('Which robot, and which dock?'); } },
       { box: 'reply', status: 'INFO', 'in': 'question', out: 'Which robot, and which dock? (chips for the stopped robots)' }],
-      result: { key: 'V-question', html: 'The model could not resolve the request, so it asked a question instead of guessing. Pick a robot on the phone.' } });
+      result: { key: 'V-question', html: 'The model could not resolve the request, so it asked a question instead of guessing. Pick a robot on the phone.' } };
   }
   function chooseRobot(label) {
     V.chips = []; V.chipMode = 'phrase'; V.messages.push({ who: 'user', text: label, caption: 'tap' }); refreshPhone();
     var r = robotByLabel(label);
-    return run('recover ' + label, recoverSteps(r, r && r.incident ? r.incident.station : ''));
+    return run('recover ' + label, recoverSteps(r, r && r.incident ? r.incident.station : ''), true);
   }
   function apply(cmds) {
     var S = App.live, wh = S.wh, routes = [];
@@ -148,12 +158,26 @@
 
   /* for the acceptance tests: say a phrase and answer any confirm automatically */
   function runAuto(i, answer) {
-    setup(); render();
-    var poll = setInterval(function () { var rj = document.querySelector('#v-pipe .approval #ap-reject:not([disabled])'); if (rj) rj.click(); if (V.pending) { var f = V.pending, a = answer || 'yes'; V.pending = null; V.confirm = null; V.messages.push({ who: 'user', text: a === 'yes' ? 'Yes' : 'No', caption: 'tap' }); refreshPhone(); f(a); } }, 80);
-    return say(i).then(function (r) { clearInterval(poll); return { key: r.result, text: document.getElementById('v-pipe').textContent, phone: V.messages.map(function (m) { return m.text; }), visited: r.visited }; });
+    UI.openScenario('V'); window.Scenarios.current().id = null; window.Scenarios.renderPlayer(document.getElementById('side'), 'V');   // a fresh scene each time
+    var poll = setInterval(function () { var rj = document.querySelector('#sc-pipe .approval #ap-reject:not([disabled])'); if (rj) rj.click(); if (V.pending) { var f = V.pending, a = answer || 'yes'; V.pending = null; V.confirm = null; V.messages.push({ who: 'user', text: a === 'yes' ? 'Yes' : 'No', caption: 'tap' }); refreshPhone(); f(a); } }, 80);
+    return say(i).then(function (r) { clearInterval(poll); return { key: r.result, text: document.getElementById('sc-pipe').textContent, phone: V.messages.map(function (m) { return m.text; }), visited: r.visited }; });
   }
 
-  UI.register('voice', function () { setup(); render(); });
-  App.on('screen', function (k) { if (k !== 'voice' && App.scenarioActive && !(App.sel && App.sel.type === 'scenario')) { if (window.Scenarios) window.Scenarios.stop(); } });
-  window.Voice = { render: function () { setup(); render(); }, runAuto: runAuto, say: say, PHRASES: PHRASES, state: V };
+  /* scenario V: plays in the same scenario player as U1-U10 (Prev / Next, variants, Replay) */
+  var VARIANTS = [{ id: 'p1', label: '1. Recover Bot 5' }, { id: 'p2', label: '2. Reroute (asks to confirm)' }, { id: 'p3', label: '3. Release an e-stop (refused)' }, { id: 'p4', label: '4. Unclear request' }];
+  window.Scenarios.register('V', {
+    short: 'V Voice from a phone', title: 'V: Voice from a phone', wh: 'A', runLabel: 'Say it',
+    shows: 'A supervisor handles failures by voice without walking to a screen. The phone is a mock: no microphone and no speech service; the four phrases are presets and every model step is a scripted example.',
+    variants: VARIANTS,
+    setup: function () { setup(); return null; },
+    body: function () { return bodyHtml(); },
+    bind: function () { phoneCol(); bindPhone(); stepLine(); },
+    run: function (variant) {
+      var i = Math.max(0, VARIANTS.map(function (v) { return v.id; }).indexOf(variant));
+      if (V.busy) return Promise.resolve(App.lastPipeline);
+      V.listening = true; V.chips = []; refreshPhone();
+      return new Promise(function (res) { setTimeout(res, App.reducedMotion ? 0 : 700); }).then(function () { V.listening = false; return say(i, true); });
+    }
+  });
+  window.Voice = { render: render, runAuto: runAuto, say: say, PHRASES: PHRASES, state: V };
 })();

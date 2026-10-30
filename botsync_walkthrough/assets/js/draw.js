@@ -12,8 +12,10 @@
     blinkHz: 1,
     recoveredMs: 2000,
     vlmBoxDelayMs: 400,
-    pipelineBoxMs: 700,
+    pipelineBoxMs: 700,        // spec A7 value; kept for reference
+    pipelineHoldMs: 2500,      // hold after each box's text has finished (at 1x); changed after review
     typewriterCps: 40,
+    typewriterMaxSec: 3,       // long outputs type faster so no box takes more than about 3 s to write
     swapPhaseSec: 1.5,
     maxFps: 30,
     font: 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif',
@@ -511,7 +513,20 @@
     if (o.state === 'done') s += '<path d="M' + (o.x + 168) + ' ' + (o.y + 14) + ' l4 5 l8 -10" stroke="#2B2D31" stroke-width="1.5" fill="none"/>';
     if (o.state === 'failed') s += '<text x="' + (o.x + 182) + '" y="' + (o.y + 22) + '" text-anchor="end" font-size="12" font-weight="bold" fill="' + C.red + '">FAIL</text>';
     if (o.status) s += svgChip(o.status, o.x + 184, o.y + 48);
+    if (o.kind) s += svgKindChip(o.kind, o.x + 10, o.y + 50);
     return s + '</g>';
+  }
+  /* "what is this box" chip: LLM, VLM, CODE, ROBOT, PERSON, DATA, SPEECH. Decoration colours only, never state colours */
+  var KIND_COL = { LLM: '#5B47B0', VLM: '#5B47B0', SPEECH: '#5B47B0', CODE: '#4A4D55', ROBOT: '#1F5FA8', PERSON: '#12807F', DATA: '#12807F' };
+  function svgKindChip(kind, x, y) {
+    var parts = String(kind).split('+'), s = '', cx = x;
+    parts.forEach(function (k) {
+      var col = KIND_COL[k] || '#4A4D55', w = k.length * 7.4 + 10;
+      s += '<g class="kind-chip" data-kind="' + esc(k) + '"><rect x="' + cx + '" y="' + y + '" width="' + w + '" height="15" rx="7.5" fill="' + col + '"/>' +
+        '<text x="' + (cx + w / 2) + '" y="' + (y + 11.5) + '" text-anchor="middle" font-size="12" font-weight="bold" fill="#FFFFFF">' + esc(k) + '</text></g>';
+      cx += w + 4;
+    });
+    return s;
   }
   function svgArrow(pts, label, opts) {
     opts = opts || {};
@@ -662,7 +677,7 @@
     // A6
     drawCameraScene: drawCameraScene, drawBlurDemo: drawBlurDemo,
     // A7
-    svgPipelineBox: svgPipelineBox, svgChip: svgChip, svgArrow: svgArrow, svgPersonIcon: svgPersonIcon, htmlIOPanel: htmlIOPanel, htmlGateList: htmlGateList,
+    svgPipelineBox: svgPipelineBox, svgKindChip: svgKindChip, KIND_COL: KIND_COL, svgChip: svgChip, svgArrow: svgArrow, svgPersonIcon: svgPersonIcon, htmlIOPanel: htmlIOPanel, htmlGateList: htmlGateList,
     // A8
     svgTimeShareBar: svgTimeShareBar, svgLegendSwatch: svgLegendSwatch, svgComparisonBars: svgComparisonBars, svgGantt: svgGantt, htmlMiniMeter: htmlMiniMeter, htmlSortableTable: htmlSortableTable,
     // A9
