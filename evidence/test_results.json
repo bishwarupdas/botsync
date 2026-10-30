@@ -13,7 +13,7 @@
   "n": 2,
   "name": "No external requests",
   "checks": [
-   "PASS 10 requests, all file:// (0 other)"
+   "PASS 15 requests, all file:// (0 other)"
   ],
   "pass": true
  },
@@ -21,8 +21,8 @@
   "n": 3,
   "name": "No setup",
   "checks": [
-   "PASS no node_modules or package.json among 12 files",
-   "PASS index.html references only relative assets/ paths: assets/img/favicon.svg, assets/css/style.css, assets/js/data.js, assets/js/draw.js, assets/js/warehouses.js, assets/js/sim.js, assets/js/scenarios.js, assets/js/ui.js, assets/js/game.js, assets/js/voice.js",
+   "PASS no node_modules or package.json among 17 files",
+   "PASS index.html references only relative assets/ paths: assets/img/favicon.svg, assets/css/style.css, assets/js/data.js, assets/js/predict-data.js, assets/js/predict-calc.js, assets/js/history-data.js, assets/js/draw.js, assets/js/warehouses.js, assets/js/sim.js, assets/js/scenarios.js, assets/js/ui.js, assets/js/game.js, assets/js/voice.js, assets/js/predict.js, assets/js/history.js",
    "PASS no modules, fetch, XHR, workers or http(s) URLs in the page",
    "PASS no Math.random() in sim.js or draw.js",
    "PASS no speech recognition or microphone API"
@@ -40,6 +40,8 @@
    "PASS banner visible on voice",
    "PASS banner visible on evidence",
    "PASS banner visible on fleet",
+   "PASS banner visible on site",
+   "PASS banner visible on predict",
    "PASS banner visible on how",
    "PASS banner visible on arch",
    "PASS banner visible on assets",
@@ -73,7 +75,7 @@
  },
  {
   "n": 7,
-  "name": "Every scenario U1-U10 and the four voice phrases run to the end",
+  "name": "Every scenario U1-U10 and V (voice, four phrases) run to the end",
   "checks": [
    "PASS U1 [pass] (approve) -> U1-pass; boxes diagnose,propose,check,execute,log",
    "PASS U1 [fail] (approve) -> U1-fail-approved; boxes diagnose,propose,check,person,execute,log",
@@ -249,11 +251,11 @@
    "PASS 5.4 aboveThe16HourRate: data.js 4654.83754739337 vs workbook 4654.83754739337",
    "PASS 5.4 robotsAt24x7Sites: data.js 74 vs workbook 74",
    "PASS 5.4 extraHoursPerRobot: data.js 62.9032100999103 vs workbook 62.9032100999103",
-   "PASS 5.4 avgChargeSessionMin: data.js 100.638775544646 vs workbook 100.638775544646",
-   "PASS 5.4 ceilingIfEveryChargeBecameASwap24x7: data.js 10320.0283959424 vs workbook 10320.0283959424",
+   "PASS 5.4 avgChargeSessionMin: data.js 100.638775544646 vs workbook 100.638775531116",
+   "PASS 5.4 ceilingIfEveryChargeBecameASwap24x7: data.js 10320.0283959424 vs workbook 10320.0283958698",
    "PASS 5.4 chargingHoursFleetInScheduledTime: data.js 20295.21 vs workbook 20295.21",
-   "PASS 5.4 fleetCeilingIfEverySwap: data.js 19286.8903990229 vs workbook 19286.8903990229",
-   "PASS 5.4 fleetCeilingShare: data.js 0.143606224677023 vs workbook 0.143606224677023",
+   "PASS 5.4 fleetCeilingIfEverySwap: data.js 19286.8903990229 vs workbook 19286.8903988874",
+   "PASS 5.4 fleetCeilingShare: data.js 0.143606224677023 vs workbook 0.143606224676014",
    "PASS 5.4 weakPacks: data.js 57 vs workbook 57",
    "PASS 5.4 lowBatteryStopsPerRobotWeak: data.js 2.70175438596491 vs workbook 2.70175438596491",
    "PASS 5.4 lowBatteryStopsPerRobotHealthy: data.js 0.585492227979275 vs workbook 0.585492227979275",
@@ -414,6 +416,10 @@
    "PASS 1440x900 evidence: text >= 14 px (12 px only for labels, tags, chips): 0 smaller []",
    "PASS 1440x900 fleet: no horizontal page scroll (0 px over)",
    "PASS 1440x900 fleet: text >= 14 px (12 px only for labels, tags, chips): 0 smaller []",
+   "PASS 1440x900 site: no horizontal page scroll (0 px over)",
+   "PASS 1440x900 site: text >= 14 px (12 px only for labels, tags, chips): 0 smaller []",
+   "PASS 1440x900 predict: no horizontal page scroll (0 px over)",
+   "PASS 1440x900 predict: text >= 14 px (12 px only for labels, tags, chips): 0 smaller []",
    "PASS 1440x900 how: no horizontal page scroll (0 px over)",
    "PASS 1440x900 how: text >= 14 px (12 px only for labels, tags, chips): 0 smaller []",
    "PASS 1440x900 arch: no horizontal page scroll (0 px over)",
@@ -432,6 +438,10 @@
    "PASS 1024x768 evidence: text >= 14 px (12 px only for labels, tags, chips): 0 smaller []",
    "PASS 1024x768 fleet: no horizontal page scroll (0 px over)",
    "PASS 1024x768 fleet: text >= 14 px (12 px only for labels, tags, chips): 0 smaller []",
+   "PASS 1024x768 site: no horizontal page scroll (0 px over)",
+   "PASS 1024x768 site: text >= 14 px (12 px only for labels, tags, chips): 0 smaller []",
+   "PASS 1024x768 predict: no horizontal page scroll (0 px over)",
+   "PASS 1024x768 predict: text >= 14 px (12 px only for labels, tags, chips): 0 smaller []",
    "PASS 1024x768 how: no horizontal page scroll (0 px over)",
    "PASS 1024x768 how: text >= 14 px (12 px only for labels, tags, chips): 0 smaller []",
    "PASS 1024x768 arch: no horizontal page scroll (0 px over)",
@@ -444,8 +454,8 @@
   "name": "Speed",
   "checks": [
    "PASS a week at 16x ran in 2.06 s (< 3 s)",
-   "PASS 20-run average finished in 4.7 s (< 60 s)",
-   "PASS page stayed responsive: longest gap between heartbeats 570 ms"
+   "PASS 20-run average finished in 5.0 s (< 60 s)",
+   "PASS page stayed responsive: longest gap between heartbeats 558 ms"
   ],
   "pass": true
  },
@@ -453,11 +463,11 @@
   "n": 18,
   "name": "Assets gallery",
   "checks": [
-   "PASS 88 required assets present in the gallery (93 figures); missing: none",
+   "PASS 89 required assets present in the gallery (94 figures); missing: none",
    "PASS no canvas asset is blank (none blank)",
    "PASS no asset drawn into its canvas edge (clipping check): none clipped",
-   "PASS palette: 92564 coloured pixels; outside the state hues (red, green, amber) and the decoration hues (teal, blue, violet): 11 {\"160\":2,\"170\":1,\"340\":8}",
-   "PASS draw.js exports 42 asset functions, matching the 42 listed for 7A (A1 robot+battery bar, A2 pallet+load, A3 x4, A4 x12, A5 x5, A6 x2, A7 x6, A8 x6, A9, A10 x2)",
+   "PASS palette: 95469 coloured pixels; outside the state hues (red, green, amber) and the decoration hues (teal, blue, violet): 11 {\"160\":2,\"170\":1,\"340\":8}",
+   "PASS draw.js exports 43 asset functions, matching the 43 listed for 7A (A1 robot+battery bar, A2 pallet+load, A3 x4, A4 x12, A5 x5, A6 x2, A7 x6 plus the kind chip added after review, A8 x6, A9, A10 x2)",
    "PASS every canvas draw function has the signature (ctx, x, y, angleRad, state, opts)"
   ],
   "pass": true
@@ -480,10 +490,13 @@
    "PASS pilot tags: S08, S21, S22",
    "PASS \"in this demo\" tags: S08, S12, S20",
    "PASS header: \"10 of 30 sites run 24 hours: 74 of 250 robots (Analysis 4). This is wh\"",
-   "PASS clicking S08 opens Warehouse A",
-   "PASS clicking S12 opens Warehouse B",
-   "PASS clicking S20 opens Warehouse C",
-   "PASS other tiles say \"not simulated here\"",
+   "PASS clicking S08 opens its site history",
+   "PASS S08 history: \"Open live warehouse\" opens Warehouse A",
+   "PASS clicking S12 opens its site history",
+   "PASS S12 history: \"Open live warehouse\" opens Warehouse B",
+   "PASS clicking S20 opens its site history",
+   "PASS S20 history: \"Open live warehouse\" opens Warehouse C",
+   "PASS S01 opens its history; no live warehouse button, and it says it is not simulated",
    "PASS architecture: three lanes and 3 callouts",
    "PASS how it works: clicking a box shows its explanation",
    "PASS roadmap: 6 month tabs; RICE sorted by score (first: LLM root-cause triage); swap row bold",
@@ -497,15 +510,19 @@
    "PASS approval screen in U5 [b1]: sections What failed / Why it / The proposal / A passing; offending value underlined: true; buttons Use Bay 6 | Edit | Reject",
    "PASS approval screen in U6 [tight]: sections What failed / Why it / The proposal / A passing; offending value underlined: true; buttons Approve alternative | Edit | Reject",
    "PASS View as: 6 roles, 6 different headline sets; label \"· viewing as Product and engineering\"",
-   "PASS Quick tour runs steps [1,3,6,13,14]",
-   "PASS Guided runs 14 steps with Back / Next and a step counter",
+   "PASS Quick tour (changed after review: one step from chapters 1, 3, 5, 8, 9) runs steps [\"1.1\",\"3.1\",\"5.1\",\"8.1\",\"9.3\"]",
+   "PASS Guided runs 36 steps in 9 chapters with Back / Next and a \"Chapter n of 9 · step k of m\" counter",
+   "PASS a step that waits for a decision (U1 fail) keeps Next locked until the reader decides",
+   "PASS the chapter list jumps to chapter 4 (How it works)",
    "PASS Show sources on evidence: 29 numbers carry a source tag",
    "PASS Show sources on fleet: 96 numbers carry a source tag",
    "PASS Show sources on roadmap: 45 numbers carry a source tag",
-   "PASS Show sources on explore: 26 numbers carry a source tag",
+   "PASS Show sources on explore: 34 numbers carry a source tag",
    "PASS Show sources on game: 40 numbers carry a source tag",
-   "PASS every one of 236 tags is printed from a src field in data.js (0 not: [])",
-   "PASS src values in data.js: Analysis 1 | Analysis 2 | Analysis 9 | Analysis 4 | Analysis 10 | Analysis 5 | sites and incidents tabs | Analysis 3 | Analysis 6 | Analysis 7 | Planted_patterns tab | Analysis 8 | assumed | sites tab | incidents tab | charge_sessions tab | eval_results tab (scripted scenario, not measured) | scripted example | change_requests tab (scripted scenario, not measured) | assumed (author estimate) | derived from the values next to it | battery_packs tab | robots tab | robot_daily_utilization tab | stations tab | error_codes tab | Analysis 11 | Analysis 12 | ai_flow_steps tab | simulated"
+   "PASS Show sources on predict: 39 numbers carry a source tag",
+   "PASS Show sources on site: 89 numbers carry a source tag",
+   "PASS every one of 372 tags is printed from a src field in data.js (0 not: [])",
+   "PASS src values in data.js: Analysis 1 | Analysis 2 | Analysis 9 | Analysis 4 | Analysis 10 | Analysis 5 | sites and incidents tabs | Analysis 3 | Analysis 6 | Analysis 7 | Planted_patterns tab | Analysis 8 | assumed | sites tab | incidents tab | charge_sessions tab | eval_results tab (scripted scenario, not measured) | scripted example | change_requests tab (scripted scenario, not measured) | assumed (author estimate) | derived from the values next to it | battery_packs tab | robots tab | robot_daily_utilization tab | stations tab | error_codes tab | Analysis 11 | Analysis 12 | ai_flow_steps tab | simulated | Analysis 13a | Analysis 13b | Analysis 13c | Analysis 13d | Analysis 13e | missions tab | robots and battery_packs tabs | calculated"
   ],
   "pass": true
  },
@@ -538,6 +555,53 @@
    "PASS A: a simulated week has 168.00 scheduled hours per robot (expected 168)",
    "PASS B: a simulated week has 112.00 scheduled hours per robot (expected 112)",
    "PASS C: a simulated week has 96.00 scheduled hours per robot (expected 96)"
+  ],
+  "pass": true
+ },
+ {
+  "n": 24,
+  "name": "Predict screen (prediction add-on spec, tests 1 to 9)",
+  "checks": [
+   "PASS add-on 1: node test_calc.js prints the reference values (11 lines)",
+   "PASS add-on 2: Analysis 13a to 13e in the workbook match the calculation module (15 values)",
+   "PASS add-on 3: all 18 default figures on screen match section 8",
+   "PASS add-on 3: S12: \"Charging starts cluster at 22:00 (17.0 sessions a day)\", no planning numbers",
+   "PASS add-on 3: S20: \"Charging starts cluster at 22:00 (13.9 sessions a day)\", no planning numbers",
+   "PASS add-on 4: cut-off to day 15 (2026-09-16) changes panels 1,2,4",
+   "PASS add-on 4: back to day 20 restores every number",
+   "PASS add-on 4: window start and length change panel 3 only",
+   "PASS add-on 4: the threshold changes panel 4 only",
+   "PASS add-on 4: swap minutes 10 changes only the operator load (now 0.153 / 0.200)",
+   "PASS add-on 4: defaults restored",
+   "PASS add-on 5: PREDICTION in the title and in 5 panel headings",
+   "PASS add-on 5: the two italic lines and the bottom note are exact",
+   "PASS add-on 5: the six limits match the workbook's 13f word for word (6)",
+   "PASS add-on 6: no \"AUC\", \"accuracy\" or \"F1\" on the Predict screen",
+   "PASS add-on 6: no network request (15 requests, all file://)",
+   "PASS add-on 8: 6 sliders and selectors, each with a label",
+   "PASS add-on 8: 6 charts, each with an aria-label carrying its numbers",
+   "PASS add-on 8: the cut-off slider works from the keyboard and keeps focus",
+   "PASS add-on 8: Esc leaves the screen",
+   "PASS add-on 8: with reduced motion on, no animation on the Predict screen",
+   "PASS add-on 9: the window band and the selected threshold are hatched with a dashed or thick outline, so they survive greyscale",
+   "PASS Predict at 1440x900: no horizontal page scroll",
+   "PASS Predict at 1024x768: no horizontal page scroll"
+  ],
+  "pass": true
+ },
+ {
+  "n": 25,
+  "name": "Site history for all 30 sites (added after review)",
+  "checks": [
+   "PASS every row decodes: 250 robots, 2137 incidents, 15848 charge sessions, 54207 missions (workbook: {\"incidents\":2137,\"chargeSessions\":15848,\"missions\":54207})",
+   "PASS all 30 tiles open their history; robot rows, charging share, incidents and low-battery stops match the tile figures",
+   "PASS sorting by incidents puts the most first (44, 25, 14, 10, 10 ...)",
+   "PASS Enter on a robot opens its timeline: 30 day bars, the last day's lanes Charging, Incidents, Missions, 23 events listed",
+   "PASS clicking day 4 opens 2026-09-04; it says missions exist only for the last 7 days",
+   "PASS site predictions add up to the Predict screen: 86 robots ran flat early (41 again), 37 on the watch list",
+   "PASS the site prediction box carries the PREDICTION tag and only the same-as-before method",
+   "PASS Esc goes back to the Fleet overview",
+   "PASS no errors ([])"
   ],
   "pass": true
  }

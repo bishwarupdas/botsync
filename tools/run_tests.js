@@ -83,7 +83,7 @@ async function main() {
 
   test(4, 'Banner present on every screen');
   { const s = await open(DIR, { browser }), p = s.page, D = await p.evaluate(() => BOTSYNC_DATA.banner);
-    for (const sc of ['start', 'explore', 'game', 'roadmap', 'voice', 'evidence', 'fleet', 'how', 'arch', 'assets']) {
+    for (const sc of ['start', 'explore', 'game', 'roadmap', 'voice', 'evidence', 'fleet', 'site', 'predict', 'how', 'arch', 'assets']) {
       await p.evaluate(sc => UI.show(sc), sc); await p.waitForTimeout(150);
       ok(await p.evaluate(b => { const el = document.getElementById('banner'); const r = el.getBoundingClientRect(); return el.textContent === b && r.height > 0 && getComputedStyle(el).display !== 'none'; }, D), `banner visible on ${sc}`);
     }
@@ -102,7 +102,7 @@ async function main() {
 
   await t6(browser, '');
 
-  test(7, 'Every scenario U1-U10 and the four voice phrases run to the end');
+  test(7, 'Every scenario U1-U10 and V (voice, four phrases) run to the end');
   const expect = [
     ['U1', 'pass', 'approve', 'U1-pass', ['PASS', '4.0 min', '21.2 min']], ['U1', 'fail', 'approve', 'U1-fail-approved', ['FAIL', 'speed 0.6 m/s is above the 0.3 m/s limit', '7 min']], ['U1', 'fail', 'reject', 'U1-fail-operator', ['FAIL', '21.2 min']],
     ['U2', 'box', 'approve', 'U2-box', ['unmapped_obstacle', 'alternate route clearance', 'PASS']], ['U2', 'spill', 'approve', 'U2-spill', ['damaged_pallet', 'person clears it']], ['U2', 'curtain', 'approve', 'U2-curtain', ['soft_curtain', 'scripted']],
@@ -197,7 +197,7 @@ async function main() {
       await p.evaluate(sc => { UI.show(sc); UI.setSpeed(0); }, sc); await p.waitForTimeout(300);   // paused: the robot list is not re-drawn while we walk it
       await p.evaluate(() => document.activeElement && document.activeElement.blur());
       const reached = new Set(); let ring = true;
-      for (let k = 0; k < 160; k++) { await p.keyboard.press('Tab'); const info = await p.evaluate(() => { const e = document.activeElement; if (!e || e === document.body) return null; e.dataset.tabseen = '1'; const cs = getComputedStyle(e); return { tag: e.tagName, ring: cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) >= 2 }; }); if (info) { reached.add(1); if (info.tag === 'BUTTON' && !info.ring) ring = false; } }
+      for (let k = 0; k < 220; k++) { await p.keyboard.press('Tab'); const info = await p.evaluate(() => { const e = document.activeElement; if (!e || e === document.body) return null; e.dataset.tabseen = '1'; const cs = getComputedStyle(e); return { tag: e.tagName, ring: cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) >= 2 }; }); if (info) { reached.add(1); if (info.tag === 'BUTTON' && !info.ring) ring = false; } }
       const missed = await p.evaluate(() => [...document.querySelectorAll('button')].filter(b => b.offsetParent && !b.disabled && !b.closest('#legend') && b.getBoundingClientRect().width > 0 && !b.dataset.tabseen).map(b => b.textContent.trim().slice(0, 30)));
       ok(missed.length === 0 || (sc === 'roadmap' && missed.length < 3), `${sc}: every visible button reachable with Tab (${missed.length} not reached ${JSON.stringify(missed.slice(0, 5))})`);
       ok(ring, `${sc}: focused buttons show a 2 px focus ring`);
@@ -226,11 +226,11 @@ async function main() {
   test(15, 'Layout at 1440x900 and 1024x768');
   for (const vp of [{ width: 1440, height: 900 }, { width: 1024, height: 768 }]) {
     const s = await open(DIR, { browser, viewport: vp }), p = s.page;
-    for (const sc of ['start', 'explore', 'game', 'voice', 'roadmap', 'evidence', 'fleet', 'how', 'arch']) {
+    for (const sc of ['start', 'explore', 'game', 'voice', 'roadmap', 'evidence', 'fleet', 'site', 'predict', 'how', 'arch']) {
       await p.evaluate(sc => UI.show(sc), sc); await p.waitForTimeout(sc === 'explore' || sc === 'game' ? 1200 : 300);
       if (sc === 'explore') { await p.evaluate(() => UI.openScenario('U1')); await p.waitForTimeout(400); }
       const r = await p.evaluate(() => {
-        const allow = '.tag, .glabel, .chip-role, .swap-step, .status, .io-panel, .srctag, .bubble-cap, .phrase-chip, .mic-cap, figcaption, svg';
+        const allow = '.tag, .kchip, .weak, .chip, .glabel, .chip-role, .swap-step, .status, .io-panel, .srctag, .bubble-cap, .phrase-chip, .mic-cap, figcaption, svg';
         const small = []; const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
         while (walker.nextNode()) { const t = walker.currentNode; if (!t.textContent.trim()) continue; const e = t.parentElement; if (!e.offsetParent && getComputedStyle(e).position !== 'fixed') continue; if (e.closest('[hidden]')) continue; const fs = parseFloat(getComputedStyle(e).fontSize); if (fs < 12 || (fs < 14 && !e.closest(allow))) small.push(e.tagName + '.' + e.className + ' ' + fs + 'px "' + t.textContent.trim().slice(0, 30) + '"'); }
         return { scroll: document.documentElement.scrollWidth - document.documentElement.clientWidth, small };
@@ -265,7 +265,7 @@ async function main() {
       'building:walls', 'building:rack', 'building:dock', 'building:glare', 'building:conveyor', 'building:staging', 'building:charger', 'building:chargerBusy', 'building:service', 'building:swap', 'building:pack', 'building:slot-charged', 'building:slot-charging', 'building:slot-empty',
       'overlay:route', 'overlay:safety', 'overlay:bbox', 'overlay:ring', 'overlay:tooltip',
       'camera:fallen_box', 'camera:spilled_pallet', 'camera:soft_curtain', 'camera:glare', 'camera:dirty_lens', 'camera:wrapped_pocket', 'camera:skewed_pallet', 'camera:damaged_pallet', 'camera:blurBefore', 'camera:blurAfter',
-      'pipe:box-idle', 'pipe:box-active', 'pipe:box-done', 'pipe:box-failed', 'pipe:box-waiting', 'pipe:chips', 'pipe:arrows', 'pipe:person', 'pipe:io', 'pipe:gates',
+      'pipe:box-idle', 'pipe:box-active', 'pipe:box-done', 'pipe:box-failed', 'pipe:box-waiting', 'pipe:chips', 'pipe:kinds', 'pipe:arrows', 'pipe:person', 'pipe:io', 'pipe:gates',
       'chart:timeshare', 'chart:pattern-moving', 'chart:pattern-charging', 'chart:pattern-idle', 'chart:pattern-stopped', 'chart:compare', 'chart:gantt', 'chart:meter', 'chart:table',
       'safety:person', 'safety:forklift', 'phone:idle', 'phone:listening', 'ui:button', 'ui:primary', 'ui:disabled', 'ui:switchOff', 'ui:switchOn', 'ui:slider', 'ui:tags', 'ui:tabs', 'ui:banner', 'ui:log', 'favicon', 'legend'];
     const have = await p.evaluate(() => [...document.querySelectorAll('[data-asset]')].map(e => e.dataset.asset));
@@ -290,9 +290,9 @@ async function main() {
     ok(badN <= pal.total * 0.0002, `palette: ${pal.sat} coloured pixels; outside the state hues (red, green, amber) and the decoration hues (teal, blue, violet): ${badN} ${JSON.stringify(pal.bad)}`);
     const fnsPage = await p.evaluate(() => Object.keys(Draw).filter(k => /^(draw|svg|html)[A-Z]/.test(k)).sort());
     const SPEC_7A = ['drawRobot', 'drawBatteryBar', 'drawPallet', 'drawLoad', 'drawBox', 'drawCurtain', 'drawPerson', 'drawForklift', 'drawBuilding', 'drawRack', 'drawDockDoor', 'drawGlareBand', 'drawSun', 'drawConveyor', 'drawStaging', 'drawCharger', 'drawServiceBay', 'drawSwapBay', 'drawPack', 'drawPackSlot',
-      'drawRouteLine', 'drawSafetyField', 'drawBoundingBox', 'drawSelectionRing', 'drawTooltip', 'drawCameraScene', 'drawBlurDemo', 'svgPipelineBox', 'svgChip', 'svgArrow', 'svgPersonIcon', 'htmlIOPanel', 'htmlGateList',
+      'drawRouteLine', 'drawSafetyField', 'drawBoundingBox', 'drawSelectionRing', 'drawTooltip', 'drawCameraScene', 'drawBlurDemo', 'svgPipelineBox', 'svgKindChip', 'svgChip', 'svgArrow', 'svgPersonIcon', 'htmlIOPanel', 'htmlGateList',
       'svgTimeShareBar', 'svgLegendSwatch', 'svgComparisonBars', 'svgGantt', 'htmlMiniMeter', 'htmlSortableTable', 'drawSafetyScene', 'htmlPhoneMock', 'svgMic'].sort();
-    ok(JSON.stringify(fnsPage) === JSON.stringify(SPEC_7A), `draw.js exports ${fnsPage.length} asset functions, matching the ${SPEC_7A.length} listed for 7A (A1 robot+battery bar, A2 pallet+load, A3 x4, A4 x12, A5 x5, A6 x2, A7 x6, A8 x6, A9, A10 x2)`);
+    ok(JSON.stringify(fnsPage) === JSON.stringify(SPEC_7A), `draw.js exports ${fnsPage.length} asset functions, matching the ${SPEC_7A.length} listed for 7A (A1 robot+battery bar, A2 pallet+load, A3 x4, A4 x12, A5 x5, A6 x2, A7 x6 plus the kind chip added after review, A8 x6, A9, A10 x2)`);
     const sig = await p.evaluate(() => Object.keys(Draw).filter(k => /^draw[A-Z]/.test(k)).every(k => Draw[k].length === 6));
     ok(sig, 'every canvas draw function has the signature (ctx, x, y, angleRad, state, opts)');
     test(19, 'Stopped state readable without colour');
@@ -315,8 +315,9 @@ async function main() {
     ok(fl.demo.sort().join() === 'S08,S12,S20', `"in this demo" tags: ${fl.demo.sort().join(', ')}`);
     ok(/10 of 30 sites run 24 hours: 74 of 250 robots \(Analysis 4\)/.test(fl.header), `header: "${fl.header.slice(0, 70)}"`);
     await p.screenshot({ path: path.join(OUT, 'screen_fleet.png'), fullPage: true });
-    for (const [sid, w] of [['S08', 'A'], ['S12', 'B'], ['S20', 'C']]) { await p.evaluate(() => UI.show('fleet')); await p.click(`[data-site="${sid}"]`); await p.waitForTimeout(300); ok(await p.evaluate(w => App.screen === 'work' && App.mode === 'explore' && App.wh === w && App.live.wh.id === w, w), `clicking ${sid} opens Warehouse ${w}`); }
-    await p.evaluate(() => UI.show('fleet')); await p.click('[data-site="S01"]'); ok(await p.evaluate(() => App.screen === 'fleet' && document.querySelector('[data-site="S01"]').textContent.includes('not simulated here')), 'other tiles say "not simulated here"');
+    // changed after review: every tile opens its site history; the three demo sites also open their live warehouse from there
+    for (const [sid, w] of [['S08', 'A'], ['S12', 'B'], ['S20', 'C']]) { await p.evaluate(() => UI.show('fleet')); await p.click(`[data-site="${sid}"]`); await p.waitForTimeout(300); ok(await p.evaluate(sid => App.screen === 'site' && document.querySelector('#screen-site [data-site]').dataset.site === sid, sid), `clicking ${sid} opens its site history`); await p.click('#sh-live'); await p.waitForTimeout(300); ok(await p.evaluate(w => App.screen === 'work' && App.mode === 'explore' && App.wh === w && App.live.wh.id === w, w), `${sid} history: "Open live warehouse" opens Warehouse ${w}`); }
+    await p.evaluate(() => UI.show('fleet')); await p.click('[data-site="S01"]'); await p.waitForTimeout(200); ok(await p.evaluate(() => App.screen === 'site' && !document.getElementById('sh-live') && /not simulated in this demo/.test(document.getElementById('screen-site').textContent)), 'S01 opens its history; no live warehouse button, and it says it is not simulated');
     await p.evaluate(() => UI.show('arch')); await p.waitForTimeout(200);
     const ar = await p.evaluate(() => ({ lanes: ['Robot', 'Site server (or robot edge)', 'Botsync cloud'].every(t => [...document.querySelectorAll('#screen-arch svg text')].some(e => e.textContent === t)), callouts: document.querySelectorAll('[data-callout]').length, txt: document.getElementById('screen-arch').textContent }));
     ok(ar.lanes && ar.callouts === 3 && /keeps using its standard recovery/.test(ar.txt) && /never takes input from a model/.test(ar.txt) && /stay on Botsync-controlled machines/.test(ar.txt), `architecture: three lanes and ${ar.callouts} callouts`);
@@ -354,23 +355,38 @@ async function main() {
     await p.click('[data-role="ops"]');
     // Quick tour
     await p.click('[data-go="tour"]').catch(async () => { await p.evaluate(() => UI.show('start')); await p.click('[data-go="tour"]'); });
-    for (let k = 0; k < 4; k++) { await p.waitForTimeout(400); await p.click('#g-next'); }
+    await p.evaluate(() => UI.setSpeed(16));
+    const advance = async () => { for (let k = 0; k < 300; k++) { const ap = await p.$('#sc-pipe .approval #ap-approve:not([disabled])'); if (ap) await ap.click(); else { const rj = await p.$('#sc-pipe .approval #ap-reject:not([disabled])'); if (rj) await rj.click(); } const nx = await p.$('#g-next:not([disabled])'); if (nx) { await nx.click(); return true; } await p.waitForTimeout(200); } return false; };
+    for (let k = 0; k < 4; k++) { await p.waitForTimeout(400); await advance(); }
     await p.waitForTimeout(400);
     const tour = await p.evaluate(() => App.guidedVisited);
-    ok(JSON.stringify(tour) === '[1,3,6,13,14]', `Quick tour runs steps ${JSON.stringify(tour)}`);
+    ok(JSON.stringify(tour) === '["1.1","3.1","5.1","8.1","9.3"]', `Quick tour (changed after review: one step from chapters 1, 3, 5, 8, 9) runs steps ${JSON.stringify(tour)}`);
     await p.evaluate(() => UI.stopGuided());
-    // full guided: 14 steps
+    // full guided (changed after review): 9 chapters; steps wait for the reader, and Next unlocks after a running flow or a decision
     await p.evaluate(() => UI.startGuided('full'));
-    for (let k = 0; k < 13; k++) { await p.waitForTimeout(250); await p.click('#g-next'); }
+    const gAll = await p.evaluate(() => UI.GUIDE_STEPS.map(s => s.id)), chs = await p.evaluate(() => UI.GUIDE_CHAPTERS.length);
     await p.waitForTimeout(300);
-    ok(JSON.stringify(await p.evaluate(() => App.guidedVisited)) === JSON.stringify([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]), 'Guided runs 14 steps with Back / Next and a step counter');
+    let locked = false, bad = [];
+    for (let k = 0; k < gAll.length - 1; k++) {
+      await p.waitForTimeout(250);
+      const g = await p.evaluate(() => ({ id: App.guidedStep, count: document.querySelector('#guide-bar .gcount').textContent, txt: document.getElementById('guide-bar').innerText, dis: document.getElementById('g-next').disabled }));
+      if (/^5\.2$/.test(g.id) && g.dis) locked = true;
+      if (/NaN|undefined|\[object/.test(g.txt) || !/Chapter \d of 9/.test(g.count)) bad.push(g.id);
+      if (!await advance()) { bad.push(g.id + ' stuck'); break; }
+    }
+    await p.waitForTimeout(300);
+    ok(JSON.stringify(await p.evaluate(() => App.guidedVisited)) === JSON.stringify(gAll) && chs === 9 && !bad.length, `Guided runs ${gAll.length} steps in ${chs} chapters with Back / Next and a "Chapter n of 9 · step k of m" counter${bad.length ? '; problems: ' + bad.join(', ') : ''}`);
+    ok(locked, 'a step that waits for a decision (U1 fail) keeps Next locked until the reader decides');
+    await p.selectOption('#g-chapter', '4'); await p.waitForTimeout(300);
+    ok(await p.evaluate(() => App.guidedStep === '4.1' && App.screen === 'how'), 'the chapter list jumps to chapter 4 (How it works)');
     await p.evaluate(() => UI.stopGuided());
     // Show sources
-    const srcs = await p.evaluate(() => { const set = new Set(); (function w(o) { if (o && typeof o === 'object') { for (const k in o) { if (k === 'src' && typeof o[k] === 'string') set.add(o[k]); else w(o[k]); } } })(BOTSYNC_DATA); Object.values(BOTSYNC_DATA.SRC).forEach(v => set.add(v)); return [...set]; });
+    const srcs = await p.evaluate(() => { const set = new Set(); (function w(o) { if (o && typeof o === 'object') { for (const k in o) { if (k === 'src' && typeof o[k] === 'string') set.add(o[k]); else w(o[k]); } } })(BOTSYNC_DATA); Object.values(BOTSYNC_DATA.SRC).forEach(v => set.add(v));
+      Object.values(BOTSYNC_DATA.predict.src).concat(Object.values(BOTSYNC_DATA.history.src)).forEach(v => set.add(v)); set.add('calculated'); return [...set]; });   // added after review: Predict (Analysis 13a-e, "calculated") and site history (data tabs)
     await p.click('#src-switch');
     let all = 0, badTags = [];
-    for (const sc of ['evidence', 'fleet', 'roadmap', 'explore', 'game']) {
-      await p.evaluate(sc => UI.show(sc), sc); await p.waitForTimeout(sc === 'game' ? 300 : 200);
+    for (const sc of ['evidence', 'fleet', 'roadmap', 'explore', 'game', 'predict', 'site']) {
+      await p.evaluate(sc => sc === 'site' ? UI.show('site', { site: 'S08' }) : UI.show(sc), sc); await p.waitForTimeout(sc === 'game' ? 300 : 200);
       if (sc === 'game') { await p.click('#g-run'); await p.click('#g-skip'); await p.waitForTimeout(200); }
       const t = await p.evaluate(() => [...document.querySelectorAll('.num')].filter(e => e.offsetParent).map(e => ({ src: e.dataset.src, after: getComputedStyle(e, '::after').content })));
       all += t.length; t.forEach(x => { if (!srcs.includes(x.src) || x.after !== JSON.stringify(x.src)) badTags.push(x.src); });
@@ -390,6 +406,111 @@ async function main() {
     let okCap = true, minExtra = Infinity, worst = 0;
     for (let s = 1; s <= 10; s++) { const c = W.Sim.compare({ wh: 'A', seed: s, days: 7, policy: { swap: true }, params: { headroom: 0.25 } }); minExtra = Math.min(minExtra, c.extraPalletMoves); worst = Math.max(worst, c.extraPalletMoves / c.todayVolume); if (c.extraPalletMoves > 0.25 * c.todayVolume + 1e-9) okCap = false; }
     ok(minExtra > 0 && okCap, `A, headroom 25%, swap: extra moves positive on all 10 seeds (min ${minExtra.toFixed(0)}), never above 25% of today's volume (max ${(worst * 100).toFixed(1)}%)`); }
+
+  test(24, 'Predict screen (prediction add-on spec, tests 1 to 9)');
+  { // add-on test 1: the spec's node calculation test prints exactly the reference values
+    const want = ['16x6 11.7 11.6 -0.08', '16x7 11.6 11.7 0', '24x7 20.3 20.5 0.17', 'largest site gap 0.58', 'runFlat {"nEarly":86,"shareEarly":0.47674418604651164,"nNone":164,"shareNone":0.04878048780487805}', 'docking glare 50.6 other 20.9',
+      'watch12 {"n":37,"shareOfFleet":0.148,"shareOfLaterIncidents":0.42275280898876405}', 'repeat 0.3388 telemetryDays 7 repl 118', 'S08 22 peak h 10 1.2 avg/h 0.915 opload 0.076 0.1 packs 1.53 2', 'S12 34 peak h 22 17 avg/h 1.417 opload 0.118 1.417 packs 2.36 28.33', 'S20 27.7 peak h 22 13.87 avg/h 1.156 opload 0.096 1.156 packs 1.93 23.11'];
+    let calc = ''; try { calc = execFileSync('sh', [path.join(__dirname, 'run_calc_test.sh')], { encoding: 'utf8' }); } catch (e) { calc = String(e.stdout || e); }
+    const got = calc.trim().split('\n');
+    ok(JSON.stringify(got) === JSON.stringify(want), `add-on 1: node test_calc.js prints the reference values (${got.length} lines)${JSON.stringify(got) === JSON.stringify(want) ? '' : ': ' + got.join(' / ')}`);
+    // add-on test 2: the workbook's Analysis section 13 (cached values) matches the calculation module
+    const wb = JSON.parse(execFileSync('python3', ['-I', path.join(__dirname, 'predict_workbook.py'), path.join(ROOT, 'source/botsync_dummy_data.xlsx')], { encoding: 'utf8' }));
+    const s = await open(DIR, { browser, wait: 1000 }), p = s.page;
+    const calcV = await p.evaluate(() => { const C = PredictCalc, P = BOTSYNC_DATA.predict, c = P.defaultCutDay, o = {}; ['16x6', '16x7', '24x7'].forEach(x => { const a = C.chargingShare(x, 0, c), b = C.chargingShare(x, c, P.days); o[x] = [a, b, (b - a) * 100]; }); const f = C.runFlat(c), w = C.watchList(c, 12); Object.assign(o, { siteGap: C.largestSiteGap(c), nEarly: f.nEarly, shareEarly: f.shareEarly, shareNone: f.shareNone, glare: C.dockingWindowShare('glare', 14, 3), other: C.dockingWindowShare('other', 14, 3), repeat: P.repeatShare, watchN: w.n, watchFleet: w.shareOfFleet, watchLater: w.shareOfLaterIncidents, telemetryDays: P.telemetryDays, repl: P.replacements30d }); return o; });
+    const diffs = Object.keys(calcV).filter(k => { const a = [].concat(calcV[k]), b = [].concat(wb[k]); return a.length !== b.length || a.some((x, i) => Math.abs(x - b[i]) > (k === 'repeat' ? 1e-4 : 1e-9)); });
+    ok(diffs.length === 0 && Object.keys(calcV).length === 15, `add-on 2: Analysis 13a to 13e in the workbook match the calculation module (${Object.keys(calcV).length} values${diffs.length ? '; differ: ' + diffs.join(', ') : ''})`);
+    // add-on test 3: the screen at the default
+    await p.click('#topbar [data-screen="predict"]'); await p.waitForTimeout(400);
+    const txt = () => p.evaluate(() => document.getElementById('screen-predict').innerText);
+    const panel = n => p.evaluate(n => document.querySelector(`[data-ppanel="${n}"]`).innerText, n);
+    const t0 = await txt();
+    const need = ['11.7% before, 11.6% on or after, gap -0.08 points', '16x7: 11.6% before, 11.7% on or after, gap 0.00 points', '20.3% before, 20.5% on or after, gap +0.17 points', 'Largest gap at any single site: 0.58 points', 'gaps within 0.2 points; the biggest gap at any single site is 0.6 points',
+      '86 robots with an early stop, 47.7% stopped again; 164 with none, 4.9% stopped later', '48% of robots that ran flat before ran flat again, against 5% of robots that had not', 'Glare-door sites 50.6%, other sites 20.9%', '51% of docking timeouts at glare-door sites start between 14:00 and 17:00, against 21% at other sites. A short window holds half of them',
+      '34%', '37 robots (15% of the fleet) produced 42% of the incidents on or after the cut-off', 'telemetry covers only 7 days', '118 replacements are recorded in 30 days',
+      '22.0 sessions a day, busiest hour 10:00', 'only about 8% of one operator', '0.92 average, 1.20 in the busiest hour', '0.076 average, 0.100 at the peak', '1.53 average, 2.00 at the peak'];
+    const miss = need.filter(w => !t0.includes(w));
+    ok(miss.length === 0, `add-on 3: all ${need.length} default figures on screen match section 8${miss.length ? '; missing: ' + miss.join(' | ') : ''}`);
+    for (const [site, want] of [['S12', 'Charging starts cluster at 22:00 (17.0 sessions a day)'], ['S20', 'Charging starts cluster at 22:00 (13.9 sessions a day)']]) { await p.selectOption('#p-site', site); await p.waitForTimeout(150); const t = await panel(1); ok(t.includes(want) && !/Planning numbers/.test(t), `add-on 3: ${site}: "${want}", no planning numbers`); }
+    await p.selectOption('#p-site', 'S08'); await p.waitForTimeout(150);
+    await p.screenshot({ path: path.join(OUT, 'predict_1440.png'), fullPage: true });
+    // add-on test 4: sliders change only what they should, and moving back restores every number
+    const setR = (id, v) => p.$eval('#' + id, (e, v) => { e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); }, v);
+    const snap = async () => { const o = {}; for (const n of [1, 2, 3, 4, 5]) o[n] = await panel(n); return o; };
+    const base = await snap();
+    const changed = (a, b) => [1, 2, 3, 4, 5].filter(n => a[n] !== b[n]).join(',');
+    await setR('p-cut', 15); await p.waitForTimeout(150); const c15 = await snap();
+    ok(changed(base, c15) === '1,2,4' && (await txt()).includes('2026-09-16'), `add-on 4: cut-off to day 15 (2026-09-16) changes panels ${changed(base, c15)}`);
+    await setR('p-cut', 20); await p.waitForTimeout(150); ok(changed(base, await snap()) === '', 'add-on 4: back to day 20 restores every number');
+    await setR('p-wstart', 9); await setR('p-wlen', 5); await p.waitForTimeout(150); const w = await snap();
+    ok(changed(base, w) === '3', `add-on 4: window start and length change panel ${changed(base, w)} only`);
+    await setR('p-wstart', 14); await setR('p-wlen', 3); await setR('p-thr', 6); await p.waitForTimeout(150); const th = await snap();
+    ok(changed(base, th) === '4', `add-on 4: the threshold changes panel ${changed(base, th)} only`);
+    await setR('p-thr', 12); await setR('p-swap', 10); await p.waitForTimeout(150); const sw = await snap();
+    const strip = t => t.split('\n').filter(l => !/Operator load|one operator|swaps\/h × \d+ min ÷ 60 = 0\.|Swap minutes|^\d+ min$|average, [\d.]+ at the peak \(share/.test(l)).join('\n');
+    ok(changed(base, sw) === '1' && strip(sw[1]) === strip(base[1]) && sw[1].includes('0.153 average, 0.200 at the peak'), `add-on 4: swap minutes 10 changes only the operator load (now 0.153 / 0.200)`);
+    await setR('p-swap', 5); await p.waitForTimeout(150); ok(changed(base, await snap()) === '', 'add-on 4: defaults restored');
+    // add-on test 5: labels and exact texts
+    const lab = await p.evaluate(() => ({ title: !!document.querySelector('#screen-predict h2 .tag.pred'), heads: [...document.querySelectorAll('.p-panel h3')].filter(h => /^PREDICTION · /.test(h.innerText)).length, italics: [...document.querySelectorAll('#screen-predict .p-italic')].map(e => e.innerText), limits: [...document.querySelectorAll('.p-limits li')].map(e => e.textContent) }));
+    ok(lab.title && lab.heads === 5, `add-on 5: PREDICTION in the title and in ${lab.heads} panel headings`);
+    ok(lab.italics.includes('Any better method has to beat this on days it was not trained on.') && lab.italics.includes('The data was built with a steady rate for each site and robot, so these results hold partly by design. Real fleets drift.') && lab.italics.includes('These are plain statistics. The LLM does not do any of this; it only reads the results.'), 'add-on 5: the two italic lines and the bottom note are exact');
+    ok(JSON.stringify(lab.limits) === JSON.stringify(wb.limits), `add-on 5: the six limits match the workbook's 13f word for word (${lab.limits.length})`);
+    // add-on test 6: no scores, no network
+    ok(!/\bAUC\b|accuracy|\bF1\b/i.test(await txt()), 'add-on 6: no "AUC", "accuracy" or "F1" on the Predict screen');
+    ok(s.log.requests.every(u => u.startsWith('file://')), `add-on 6: no network request (${s.log.requests.length} requests, all file://)`);
+    // add-on test 7 is covered by tests 1 to 23 (every existing screen and test still passes)
+    // add-on test 8: accessibility
+    const a11y = await p.evaluate(() => ({ ranges: [...document.querySelectorAll('#screen-predict input[type=range], #screen-predict select')].map(e => !!document.querySelector(`label[for="${e.id}"]`)), svgs: [...document.querySelectorAll('#screen-predict svg[role="img"]')].map(e => (e.getAttribute('aria-label') || '').length > 20) }));
+    ok(a11y.ranges.length === 6 && a11y.ranges.every(Boolean), `add-on 8: ${a11y.ranges.length} sliders and selectors, each with a label`);
+    ok(a11y.svgs.length >= 6 && a11y.svgs.every(Boolean), `add-on 8: ${a11y.svgs.length} charts, each with an aria-label carrying its numbers`);
+    await p.focus('#p-cut'); await p.keyboard.press('ArrowLeft'); await p.waitForTimeout(150);
+    ok(await p.evaluate(() => Predict.state.cut === 19 && document.activeElement.id === 'p-cut'), 'add-on 8: the cut-off slider works from the keyboard and keeps focus');
+    await p.keyboard.press('ArrowRight'); await p.keyboard.press('Escape'); await p.waitForTimeout(200);
+    ok(await p.evaluate(() => App.screen !== 'predict'), 'add-on 8: Esc leaves the screen');
+    await s.close();
+    const rm = await open(DIR, { browser, reducedMotion: 'reduce' }); await rm.page.evaluate(() => UI.show('predict')); await rm.page.waitForTimeout(300);
+    ok(await rm.page.evaluate(() => document.getAnimations().length === 0), 'add-on 8: with reduced motion on, no animation on the Predict screen'); await rm.close();
+    // add-on test 9: greyscale
+    const g = await open(DIR, { browser }); await g.page.evaluate(() => { UI.show('predict'); document.documentElement.style.filter = 'grayscale(1)'; }); await g.page.waitForTimeout(300);
+    const marks = await g.page.evaluate(() => ({ band: [...document.querySelectorAll('.p-band')].map(e => e.getAttribute('fill') + ' ' + e.getAttribute('stroke-dasharray')), sel: (document.querySelector('.p-sel') || { getAttribute: () => '' }).getAttribute('fill') }));
+    ok(marks.band.length === 2 && marks.band.every(b => /url\(#pat-band\) 4 3/.test(b)) && /pat-band/.test(marks.sel), 'add-on 9: the window band and the selected threshold are hatched with a dashed or thick outline, so they survive greyscale');
+    await (await g.page.$('[data-ppanel="3"]')).screenshot({ path: path.join(OUT, 'predict_greyscale_panel3.png') });
+    await (await g.page.$('[data-ppanel="4"]')).screenshot({ path: path.join(OUT, 'predict_greyscale_panel4.png') });
+    await g.close();
+    for (const vp of [{ width: 1440, height: 900 }, { width: 1024, height: 768 }]) { const v = await open(DIR, { browser, viewport: vp }); await v.page.evaluate(() => UI.show('predict')); await v.page.waitForTimeout(300); const over = await v.page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth); ok(over <= 0, `Predict at ${vp.width}x${vp.height}: no horizontal page scroll`); await v.page.screenshot({ path: path.join(OUT, `predict_${vp.width}.png`), fullPage: true }); await v.close(); }
+  }
+
+  test(25, 'Site history for all 30 sites (added after review)');
+  { const s = await open(DIR, { browser, wait: 1000 }), p = s.page;
+    const tot = await p.evaluate(() => { const H = BOTSYNC_DATA.history; let inc = 0, cs = 0, m = 0, robots = 0; Object.keys(H.sites).forEach(k => SiteHistory.siteRobots(k).forEach(r => { robots++; inc += r.inc.length; cs += r.cs.length; m += r.m.length; })); return { inc, cs, m, robots, want: H.counts }; });
+    ok(tot.robots === 250 && tot.inc === tot.want.incidents && tot.cs === tot.want.chargeSessions && tot.m === tot.want.missions, `every row decodes: ${tot.robots} robots, ${tot.inc} incidents, ${tot.cs} charge sessions, ${tot.m} missions (workbook: ${JSON.stringify(tot.want)})`);
+    const bad = []; let opened = 0;
+    for (const t of await p.evaluate(() => BOTSYNC_DATA.siteTable.map(x => x.site_id))) {
+      await p.evaluate(() => UI.show('fleet')); await p.click(`.tile[data-site="${t}"]`); await p.waitForTimeout(80);
+      const r = await p.evaluate(t => { const row = BOTSYNC_DATA.siteTable.find(x => x.site_id === t), txt = document.getElementById('screen-site').innerText, rs = SiteHistory.siteRobots(t);
+        const sch = rs.reduce((a, r) => a + r.sch, 0), chg = rs.reduce((a, r) => a + r.chg, 0), inc = rs.reduce((a, r) => a + r.inc.length, 0), low = rs.reduce((a, r) => a + r.lowbat, 0);
+        return { screen: App.screen, rows: document.querySelectorAll('.sh-row').length, n: row.robots_deployed.v, same: Math.abs(chg / sch - row.chargingShare.v) < 1e-9 && inc === row.incidents.v && low === row.lowBatteryStops.v, shown: txt.includes('charging ' + UI.fmtNum(row.chargingShare.v, 'pct1')) && txt.includes(inc + ' incidents'), clean: !/NaN|undefined|\[object/.test(txt) }; }, t);
+      if (r.screen === 'site') opened++;
+      if (!(r.rows === r.n && r.same && r.shown && r.clean)) bad.push(t + JSON.stringify(r));
+    }
+    ok(opened === 30 && bad.length === 0, `all 30 tiles open their history; robot rows, charging share, incidents and low-battery stops match the tile figures${bad.length ? ': ' + bad.slice(0, 3).join(' ') : ''}`);
+    await p.evaluate(() => UI.show('site', { site: 'S21' })); await p.waitForTimeout(150);
+    await p.click('[data-sort="inc"]'); await p.waitForTimeout(100);
+    const order = await p.evaluate(() => [...document.querySelectorAll('.sh-row')].map(r => SiteHistory.robot(r.dataset.robot).inc.length));
+    ok(order.every((x, i) => i === 0 || order[i - 1] >= x), `sorting by incidents puts the most first (${order.slice(0, 5).join(', ')} ...)`);
+    await p.focus('.sh-row'); await p.keyboard.press('Enter'); await p.waitForTimeout(200);
+    const tl = await p.evaluate(() => ({ robot: SiteHistory.state.robot, strip: document.querySelectorAll('#sh-timeline .hday').length, events: document.querySelectorAll('.sh-events li').length, lanes: [...document.querySelectorAll('#sh-timeline svg text')].map(t => t.textContent).filter(t => /^(Charging|Incidents|Missions)$/.test(t)) }));
+    ok(tl.robot && tl.strip === 30 && tl.lanes.join() === 'Charging,Incidents,Missions' && tl.events > 0, `Enter on a robot opens its timeline: 30 day bars, the last day's lanes ${tl.lanes.join(', ')}, ${tl.events} events listed`);
+    await p.click('#sh-timeline .hday[data-day="3"]', { force: true }); await p.waitForTimeout(150);
+    ok(await p.evaluate(() => SiteHistory.state.day === 3 && /2026-09-04/.test(document.getElementById('sh-timeline').textContent) && /only in the data for the last 7 days/.test(document.getElementById('sh-timeline').textContent)), 'clicking day 4 opens 2026-09-04; it says missions exist only for the last 7 days');
+    await p.screenshot({ path: path.join(OUT, 'site_history_S21.png'), fullPage: true });
+    const sp = await p.evaluate(() => { let nE = 0, hE = 0, w = 0; Object.keys(BOTSYNC_DATA.history.sites).forEach(k => { const x = SiteHistory.prediction(k); nE += x.nEarly; hE += x.hitEarly; w += x.watch; }); const f = PredictCalc.runFlat(20); return { nE, hE, w, f, wl: PredictCalc.watchList(20, 12).n }; });
+    ok(sp.nE === sp.f.nEarly && Math.abs(sp.hE / sp.nE - sp.f.shareEarly) < 1e-12 && sp.w === sp.wl, `site predictions add up to the Predict screen: ${sp.nE} robots ran flat early (${sp.hE} again), ${sp.w} on the watch list`);
+    ok(await p.evaluate(() => !!document.querySelector('#screen-site .tag.pred') && !/what-if|forecast of/i.test(document.querySelector('#screen-site .p-panel ul').textContent)), 'the site prediction box carries the PREDICTION tag and only the same-as-before method');
+    await p.keyboard.press('Escape'); await p.waitForTimeout(150);
+    ok(await p.evaluate(() => App.screen === 'fleet'), 'Esc goes back to the Fleet overview');
+    ok(s.log.pageErrors.length === 0 && s.log.console.length === 0, `no errors (${JSON.stringify(s.log.pageErrors.concat(s.log.console).slice(0, 2))})`);
+    await s.close(); }
 
   test(23, 'Shift hours (8.1c)');
   for (const [w, hrs] of [['A', 168], ['B', 112], ['C', 96]]) { const S = W.Sim.create({ wh: w, seed: 3, days: 7, mode: 'game' }); W.Sim.run(S, S.end); const m = W.Sim.metrics(S); ok(Math.abs(m.scheduledHoursPerRobot - hrs) < 1e-6, `${w}: a simulated week has ${m.scheduledHoursPerRobot.toFixed(2)} scheduled hours per robot (expected ${hrs})`); }

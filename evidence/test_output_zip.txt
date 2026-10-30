@@ -1,29 +1,34 @@
 === Test 16: Zip test
-zip size: 121700 bytes (0.12 MB)
+zip size: 600284 bytes (0.57 MB)
   PASS zip is under 5 MB
-unzipped into a new folder: /tmp/claude-0/-home-user-botsync/14ddc1e3-84a5-55d5-b752-3bb23129f809/scratchpad/fresh_unzip.8JC6ra
+unzipped into a new folder: /tmp/fresh_unzip.j2O9nY
 Archive:  botsync_walkthrough.zip
   Length      Date    Time    Name
 ---------  ---------- -----   ----
-        0  2026-10-30 09:50   botsync_walkthrough/
+        0  2026-10-30 15:18   botsync_walkthrough/
         0  2026-10-30 09:50   botsync_walkthrough/assets/
         0  2026-10-30 09:50   botsync_walkthrough/assets/img/
       551  2026-10-30 10:58   botsync_walkthrough/assets/img/favicon.svg
-        0  2026-10-30 10:25   botsync_walkthrough/assets/css/
-    25081  2026-10-30 11:45   botsync_walkthrough/assets/css/style.css
-        0  2026-10-30 12:00   botsync_walkthrough/assets/js/
+        0  2026-10-30 14:36   botsync_walkthrough/assets/css/
+    32805  2026-10-30 14:44   botsync_walkthrough/assets/css/style.css
+        0  2026-10-30 15:09   botsync_walkthrough/assets/js/
+   980460  2026-10-30 14:42   botsync_walkthrough/assets/js/history-data.js
     35004  2026-10-30 12:11   botsync_walkthrough/assets/js/sim.js
-   120574  2026-10-30 12:11   botsync_walkthrough/assets/js/ui.js
+   139931  2026-10-30 15:09   botsync_walkthrough/assets/js/ui.js
+     3280  2026-10-30 14:37   botsync_walkthrough/assets/js/predict-calc.js
+    63437  2026-10-30 14:37   botsync_walkthrough/assets/js/predict-data.js
     17365  2026-10-30 11:55   botsync_walkthrough/assets/js/game.js
-    75865  2026-10-30 11:45   botsync_walkthrough/assets/js/scenarios.js
-    43419  2026-10-30 12:11   botsync_walkthrough/assets/js/draw.js
+    23428  2026-10-30 14:40   botsync_walkthrough/assets/js/predict.js
+    78569  2026-10-30 14:34   botsync_walkthrough/assets/js/scenarios.js
+    44861  2026-10-30 14:44   botsync_walkthrough/assets/js/draw.js
    108232  2026-10-30 10:08   botsync_walkthrough/assets/js/data.js
-    15689  2026-10-30 11:32   botsync_walkthrough/assets/js/voice.js
+    17629  2026-10-30 14:37   botsync_walkthrough/assets/js/voice.js
     12904  2026-10-30 11:59   botsync_walkthrough/assets/js/warehouses.js
-     4600  2026-10-30 11:32   botsync_walkthrough/index.html
+    23199  2026-10-30 14:45   botsync_walkthrough/assets/js/history.js
+     5078  2026-10-30 15:18   botsync_walkthrough/index.html
       215  2026-10-30 09:50   botsync_walkthrough/README.txt
 ---------                     -------
-   459499                     17 files
+  1586948                     22 files
 
 === Test 1: Opens clean (fresh unzip)
   PASS console errors/warnings: 0 []
@@ -31,11 +36,11 @@ Archive:  botsync_walkthrough.zip
   PASS page errors: 0 []
 
 === Test 2: No external requests (fresh unzip)
-  PASS 10 requests, all file:// (0 other)
+  PASS 15 requests, all file:// (0 other)
 
 === Test 3: No setup (fresh unzip)
-  PASS no node_modules or package.json among 12 files
-  PASS index.html references only relative assets/ paths: assets/img/favicon.svg, assets/css/style.css, assets/js/data.js, assets/js/draw.js, assets/js/warehouses.js, assets/js/sim.js, assets/js/scenarios.js, assets/js/ui.js, assets/js/game.js, assets/js/voice.js
+  PASS no node_modules or package.json among 17 files
+  PASS index.html references only relative assets/ paths: assets/img/favicon.svg, assets/css/style.css, assets/js/data.js, assets/js/predict-data.js, assets/js/predict-calc.js, assets/js/history-data.js, assets/js/draw.js, assets/js/warehouses.js, assets/js/sim.js, assets/js/scenarios.js, assets/js/ui.js, assets/js/game.js, assets/js/voice.js, assets/js/predict.js, assets/js/history.js
   PASS no modules, fetch, XHR, workers or http(s) URLs in the page
   PASS no Math.random() in sim.js or draw.js
   PASS no speech recognition or microphone API

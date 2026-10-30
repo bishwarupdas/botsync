@@ -50,11 +50,11 @@ Each row maps a part of `source/botsync_interactive_build_spec.md` to where it i
 | 4.4 How it works: three clickable diagrams | How it works screen | T20, Audit (every box, and Enter key) |
 | 4.5 Roadmap: month tabs, sortable RICE, impact scale, what-follows line | Roadmap screen | T20, Audit (6 tabs, every column both ways) |
 | 4.9 Evidence: six SVG charts with a reading and a source tag; not-trust and missing-data lists | Evidence screen | T20 |
-| 4.10 Fleet overview: 30 tiles, 10 bold, 3 pilot, 3 in this demo that open their warehouse | Fleet overview | T20, Audit (all 30 tiles) |
+| 4.10 Fleet overview: 30 tiles, 10 bold, 3 pilot, 3 in this demo. **Changed after review:** every tile opens its site history; the 3 demo sites also open their live warehouse | Fleet overview, Site history | T20, T25, Audit (all 30 tiles, every history control) |
 | 4.11 Architecture: three lanes, arrows, three callouts | Architecture screen | T20 |
 | 4.12 Approval screen (U1-U7, voice); refuses out-of-range input | `UI.approval` | T20, Audit (U1, U2, U3, U4, U5, U6, U7, U9, U10, voice; 4 out-of-range edits refused) |
 | 4.13 View as: six roles change the default panel and the three headline numbers | fleet panel | T20, Audit (each role at each warehouse; floor Recover buttons; technician triage list; product RICE and roadmap) |
-| 4.14 Quick tour: steps 1, 3, 6, 13, 14 | `UI.startGuided('tour')` | T20 |
+| 4.14 Quick tour (changed after review): one step from chapters 1, 3, 5, 8, 9 | `UI.startGuided('tour')` | T20 |
 | 4.15 Show sources: tag text comes from `src` in `data.js` | `.num[data-src]` | T20 |
 
 ## 5. Data
@@ -70,6 +70,7 @@ Each row maps a part of `source/botsync_interactive_build_spec.md` to where it i
 
 | Spec | Where | Checked by |
 |---|---|---|
+| A7 pipeline pacing. **Changed after review:** step history cards, kind chips, text then 2.5 s hold, Auto / Step | `UI.Pipeline` | Audit (Step mode, cards, click-to-jump) |
 | 6.1 Six boxes; PASS -> execute -> log; FAIL -> person -> execute or log; nothing valid -> reject proposal -> person | `UI.Pipeline` | T6, T7; Audit (U5 nonsense instruction takes the reject-proposal path) |
 | 6.2 Gate 1 and Gate 2 names and thresholds; runtime checks | gate tables in U1, U4, U9 | T7 |
 | 6.3 Explanations and three levels | How it works | Audit |
@@ -111,17 +112,31 @@ All of these were run by clicks in the audit and by the scenario runner in T7.
 | U8 battery swap | switch, three sliders, spare packs 0 -> fallback to the charger, 6-step strip, targets, ceiling, static facts, phase 2 |
 | U9 safety stop | refused; nothing in the sim changes (T8) |
 | U10 vision path | capture, blur, label, store, confirm, edit or reject, evaluation set |
-| 9.11 order | Next scenario walks U1 > ... > U10 > voice (Audit) |
+| 9.11 order | Next walks U1 > ... > U10 > V; Prev walks back; picker jumps anywhere (Audit) |
 
 ## 10-13. Game, voice, roadmap, guided
 
 | Spec | Where | Checked by |
 |---|---|---|
 | 10 Game: switches, cameras greyed out, sliders with defaults and tags, Reset, Run a week, Skip, seed, 20-run average, scoreboard, result line, boxes | Game panel | T12, T17, T21; Audit (all at A, B and C) |
-| 11 Voice: phone, tap to speak, 4 phrases, confirm card, refusal, follow-up question, risks, note | Voice screen | T7, T8; Audit (by clicks) |
+| 11 Voice: phone, tap to speak, 4 phrases, confirm card, refusal, follow-up question, risks, note. **Changed after review:** scenario V in the scenario player | Scenario V | T7, T8; Audit (by tapping and by variant buttons) |
 | 12 RICE (recomputed), roadmap, 12.2b measures, benefits, model choice | Roadmap | T9, T20 |
-| 13 Guided: 14 steps, Back / Next, counter, leave and return | guide bar | T20; Audit (every step, Back, Leave, Return, final buttons) |
+| 13 Guided. **Changed after review:** 9 chapters, 36 steps, chapter list, Next unlocks after a decision | guide bar | T20; Audit (every step, Back, Leave, Return, chapter list, final buttons) |
+
+## Prediction add-on (`botsync_prediction_addon_spec.md`)
+
+| Add-on | Where | Checked by |
+|---|---|---|
+| 1 node calculation test prints the reference values | `tools/run_calc_test.sh` runs the spec's `test_calc.js` | T24 |
+| 2 workbook Analysis 13a to 13e match | `tools/predict_workbook.py` | T24 |
+| 3 every default number on screen | Predict screen | T24 |
+| 4 sliders change only their panels; defaults restore | Predict screen | T24, Audit (every slider over its range) |
+| 5 PREDICTION labels, italic lines, six limits | Predict screen | T24 |
+| 6 no scores, no network | Predict screen | T24 |
+| 7 existing app unchanged | all screens | T1 to T23 |
+| 8 labels, keyboard, Esc, text alternatives, reduced motion | Predict screen | T24 |
+| 9 greyscale | panels 3 and 4 | T24 (screenshots `evidence/predict_greyscale_panel*.png`) |
 
 ## 16. Acceptance tests
 
-All 23 pass. See `evidence/test_output.txt` and `evidence/test_output_zip.txt`.
+Tests 1 to 25 (24 and 25 added after review). See `evidence/test_output.txt` and `evidence/test_output_zip.txt`.

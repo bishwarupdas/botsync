@@ -39,7 +39,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   for (const g of ['explore', 'game']) { await p.evaluate(() => UI.show('start')); await click(`[data-go="${g}"]`); await sleep(400); await check(`Start: "${g}" button opens ${g}`); }
   await p.evaluate(() => UI.show('start')); await click('[data-go="tour"]'); await sleep(400); rec(await p.evaluate(() => App.guided && App.guided.kind === 'tour'), 'Start: Quick tour link starts the tour'); await p.evaluate(() => UI.stopGuided());
   await p.evaluate(() => UI.show('start')); await click('[data-go="guided"]'); await sleep(400); rec(await p.evaluate(() => App.guided && App.guided.kind === 'full'), 'Start: Guided button starts guided mode'); await p.evaluate(() => UI.stopGuided());
-  for (const sc of ['start', 'evidence', 'fleet', 'how', 'arch', 'roadmap', 'voice']) { await click(`#topbar [data-screen="${sc}"]`); await sleep(500); rec(await p.evaluate(sc => App.screen === sc || (sc === 'voice' && App.mode === 'voice'), sc), `top bar "${sc}" button opens its screen`); await check(`${sc} screen renders cleanly`); }
+  for (const sc of ['start', 'evidence', 'fleet', 'how', 'arch', 'predict', 'roadmap', 'voice']) { await click(`#topbar [data-screen="${sc}"]`); await sleep(500); rec(await p.evaluate(sc => App.screen === sc || (sc === 'voice' && App.screen === 'work' && Scenarios.current().id === 'V'), sc), `top bar "${sc}" button opens ${sc === 'voice' ? 'scenario V in the scenario player' : 'its screen'}`); await check(`${sc} screen renders cleanly`); }
   for (const m of ['explore', 'game']) { await click(`#topbar [data-mode="${m}"]`); await sleep(500); rec(await p.evaluate(m => App.mode === m && App.screen === 'work', m), `mode switch ${m}`); await check(`${m} via mode switch`); }
   await click('#topbar [data-mode="guided"]'); await sleep(400); rec(await p.evaluate(() => !!App.guided), 'mode switch Guided starts guided mode'); await p.evaluate(() => UI.stopGuided());
   for (const v of ['0', '1', '4', '16']) { await click(`#topbar [data-speed="${v}"]`); rec(await p.evaluate(v => App.speed === +v, v), `speed button ${v === '0' ? 'Pause' : v + 'x'}`); }
@@ -150,18 +150,33 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   rec(fb.packs === 0 && /fell back to the charger/.test(fb.txt), `U8: spare packs 0 -> 0 packs; robots fall back to the charger (${fb.fb} so far)`);
   await p.$eval('#sl-spares', e => { e.value = '0.3'; e.dispatchEvent(new Event('input', { bubbles: true })); });
   rec(await p.evaluate(() => App.live.packs.length === 2), 'U8: back to 0.3 per robot -> 2 packs at Warehouse A'); await check('U8');
-  // Next scenario walks the list to the voice scene
+  // Next walks U1 > ... > U10 > V; Prev walks back; the picker jumps anywhere (changed after review)
   await p.evaluate(() => UI.openScenario('U1')); const order = [];
-  for (let k = 0; k < 10; k++) { order.push(await p.evaluate(() => (Scenarios.current().id) || App.mode)); await click('#sc-next'); await sleep(300); }
-  rec(order.join(',') === 'U1,U2,U3,U4,U5,U6,U7,U8,U9,U10' && await p.evaluate(() => App.mode === 'voice'), `Next scenario walks ${order.join(' > ')} > voice`);
-  await check('Next scenario chain');
+  for (let k = 0; k < 11; k++) { order.push(await p.evaluate(() => Scenarios.current().id + ':' + document.querySelector('.sc-count').textContent)); if (k < 10) { await click('#sc-next'); await sleep(300); } }
+  rec(order.map(o => o.split(':')[0]).join(',') === 'U1,U2,U3,U4,U5,U6,U7,U8,U9,U10,V' && order[10].endsWith('11 of 11') && await p.evaluate(() => document.getElementById('sc-next').disabled), `Next walks ${order.map(o => o.split(':')[0]).join(' > ')}; counter ends "11 of 11"; Next is disabled at the end`);
+  const back = []; for (let k = 0; k < 10; k++) { await click('#sc-prev'); await sleep(300); back.push(await p.evaluate(() => Scenarios.current().id)); }
+  rec(back.join(',') === 'U10,U9,U8,U7,U6,U5,U4,U3,U2,U1' && await p.evaluate(() => document.getElementById('sc-prev').disabled), `Prev walks back ${back.join(' > ')}; Prev is disabled at U1`);
+  for (const id of ['U6', 'V', 'U3']) { await p.selectOption('#sc-pick', id); await sleep(300); rec(await p.evaluate(id => Scenarios.current().id === id, id), `scenario picker jumps to ${id}`); }
+  await check('Prev / Next / picker');
+  // pipeline pacing: Step mode waits for "Next box"; Auto runs on; every step stays as a card
+  await p.evaluate(() => { UI.openScenario('U1'); }); await sleep(300); await speed(1);
+  await click('#sc-run'); await sleep(100); await click('#sc-pipe [data-pace="step"]');
+  await sleep(7000); const held = await p.evaluate(() => document.querySelectorAll('#sc-pipe .pcard').length);
+  await click('#sc-pipe .pipe-step'); await sleep(400); const after = await p.evaluate(() => document.querySelectorAll('#sc-pipe .pcard').length);
+  rec(held === 1 && after === 2, `Step mode at 1x: the flow holds (${held} card after 7 s) and "Next box" adds one (${after})`);
+  await speed(16); await click('#sc-pipe [data-pace="auto"]'); await p.waitForSelector('#sc-pipe[data-done="1"]', { timeout: 30000 });
+  const cards = await p.evaluate(() => ({ n: document.querySelectorAll('#sc-pipe .pcard').length, kinds: [...document.querySelectorAll('#sc-pipe .pcard .kchip')].map(k => k.textContent).join(','), outs: [...document.querySelectorAll('#sc-pipe .pcard .io-out')].every(e => e.textContent.length > 0) }));
+  rec(cards.n === 5 && cards.outs && cards.kinds === 'CODE,LLM,CODE,ROBOT,DATA', `Auto: all ${cards.n} steps stay listed with their In/Out text; kind chips ${cards.kinds}`);
+  await click('#sc-pipe .pipe-svg g[data-box="propose"]'); await sleep(600); rec(await p.evaluate(() => document.querySelector('#sc-pipe .pcard[data-box="propose"]').classList.contains('flash')), 'clicking a finished box in the flowchart jumps to its step card');
+  await check('pipeline pacing and history');
 
   // ---------- F. Voice by clicks ----------
-  async function phrase(i, answer) {
-    await click('.mic-btn'); await sleep(1400); await click(`.phrase-chip[data-phrase="${i}"]`);
+  async function phrase(i, answer, viaVariant) {
+    if (viaVariant) { await click(`[data-variant="p${i + 1}"]`); await sleep(300); await click('#sc-run'); }
+    else { await click('.mic-btn'); await sleep(1400); await click(`.phrase-chip[data-phrase="${i}"]`); }
     for (let k = 0; k < 400; k++) {
-      if (await p.$('#v-pipe[data-done="1"]')) break;
-      const rj = await p.$('#v-pipe .approval #ap-reject:not([disabled])'); if (rj) await rj.click();
+      if (await p.$('#sc-pipe[data-done="1"]') && !(await p.evaluate(() => Voice.state.busy))) break;
+      const rj = await p.$('#sc-pipe .approval #ap-reject:not([disabled])'); if (rj) await rj.click();
       const cf = answer && await p.$(`[data-confirm="${answer}"]`); if (cf) await cf.click();
       await sleep(100);
     }
@@ -169,11 +184,15 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   }
   await p.evaluate(() => UI.show('voice')); await speed(4); await sleep(400);
   for (const [i, a, key] of [[0, null, 'V-recovered'], [1, 'yes', 'V-rerouted'], [1, 'no', 'V-cancelled'], [2, null, 'V-refused'], [3, null, 'V-question']]) {
-    await click('#v-reset'); await sleep(300);
-    const r = await phrase(i, a); rec(r.key === key, `voice phrase ${i + 1}${a ? ' (' + a + ')' : ''} by clicks -> ${r.key}: "${r.last}"`);
+    await click('#sc-replay'); await sleep(300);
+    const r = await phrase(i, a); rec(r.key === key, `voice phrase ${i + 1}${a ? ' (' + a + ')' : ''} by tapping the phone -> ${r.key}: "${r.last}"`);
+    await click('#sc-replay'); await sleep(300);
+    const r2 = await phrase(i, a, true); rec(r2.key === key, `voice phrase ${i + 1}${a ? ' (' + a + ')' : ''} by its variant button and "Say it" -> ${r2.key}`);
   }
+  rec(await p.evaluate(() => !document.getElementById('phone-col').hidden && document.querySelector('.work').classList.contains('voice') && /step \d/.test(document.getElementById('v-step').textContent)), 'scenario V: the phone sits in its own column, with a "step n" line tied to the pipeline');
   await click('.phrase-chip[data-phrase="0"]');
-  for (let k = 0; k < 400; k++) { if (await p.$('#v-pipe[data-done="1"]')) break; const rj = await p.$('#v-pipe .approval #ap-reject:not([disabled])'); if (rj) await rj.click(); await sleep(100); }
+  for (let k = 0; k < 400; k++) { if (await p.$('#sc-pipe[data-done="1"]') && !(await p.evaluate(() => Voice.state.busy))) break; const rj = await p.$('#sc-pipe .approval #ap-reject:not([disabled])'); if (rj) await rj.click(); await sleep(100); }
+  rec(await p.evaluate(() => document.querySelectorAll('#sc-pipe details.pipe-prev').length >= 1), 'the follow-up run keeps the earlier run (folded) above it');
   rec(await p.evaluate(() => App.lastPipeline.result === 'V-recovered' || App.lastPipeline.result === 'V-refused'), `voice phrase 4 follow-up: picking a stopped robot runs its recovery (${await p.evaluate(() => App.lastPipeline.result)})`);
   await check('voice scene');
 
@@ -200,21 +219,54 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   for (const k of ['item', 'reach', 'impact', 'confidence', 'effort', 'score', 'hours']) { await click(`#rice [data-sort="${k}"]`); await click(`#rice [data-sort="${k}"]`); }
   rec(await p.evaluate(() => document.querySelectorAll('.rice tbody tr').length === 9), 'Roadmap: RICE sorts by every column both ways'); await check('Roadmap');
   await p.evaluate(() => UI.show('fleet')); const tiles = await p.$$eval('.tile', t => t.map(x => x.dataset.site));
-  for (const t of tiles) { await p.evaluate(() => UI.show('fleet')); await click(`[data-site="${t}"]`); await sleep(60); }
+  for (const t of tiles) { await p.evaluate(() => UI.show('fleet')); await click(`[data-site="${t}"]`); await sleep(60); rec(await p.evaluate(t => App.screen === 'site' && SiteHistory.state.site === t, t), `Fleet tile ${t} opens its site history`); }
   await check(`Fleet overview: all ${tiles.length} tiles clicked`);
+  // site history: every control on one 24x7 site and one glare site
+  for (const site of ['S08', 'S20']) {
+    await p.evaluate(site => UI.show('site', { site }), site); await sleep(200);
+    for (const k of ['label', 'fw', 'soh', 'mov', 'chg', 'idle', 'err', 'inc', 'low', 'cs', 'm']) { await click(`#screen-site [data-sort="${k}"]`); await click(`#screen-site [data-sort="${k}"]`); }
+    rec(await p.evaluate(() => document.querySelectorAll('.sh-row').length > 0), `${site} history: every column sorts both ways`);
+    const rows = await p.$$eval('.sh-row', r => r.map(x => x.dataset.robot));
+    for (const rid of rows) { await click(`.sh-row[data-robot="${rid}"]`); await sleep(80); }
+    rec(await p.evaluate(r => SiteHistory.state.robot === r, rows[rows.length - 1]), `${site} history: all ${rows.length} robots open their timeline`);
+    for (let d = 0; d < 30; d += 1) { await p.click(`#sh-timeline .hday[data-day="${d}"]`, { force: true }); }
+    await click('#sh-prevday'); await click('#sh-nextday');
+    rec(await p.evaluate(() => SiteHistory.state.day === 29), `${site} history: all 30 days open, Day before / Day after work`);
+    await check(`${site} history`);
+  }
+  await p.evaluate(() => UI.show('site', { site: 'S08' })); await click('#sh-live'); await sleep(300); rec(await p.evaluate(() => App.screen === 'work' && App.wh === 'A'), 'S08 history: Open live warehouse A');
+  await p.evaluate(() => UI.show('site', { site: 'S03' })); await p.selectOption('#sh-pick', 'S24'); await sleep(200); rec(await p.evaluate(() => SiteHistory.state.site === 'S24'), 'site picker switches site');
+  await click('#sh-predict'); rec(await p.evaluate(() => App.screen === 'predict'), 'site history: the Predict link opens Predict');
+  await p.evaluate(() => UI.show('site', { site: 'S03' })); await click('#sh-back'); rec(await p.evaluate(() => App.screen === 'fleet'), 'site history: back to Fleet overview');
+  // Predict: every slider over its range, every warehouse
+  await p.evaluate(() => { Predict.reset(); UI.show('predict'); }); await sleep(200);
+  for (const [id, lo, hi] of [['p-cut', 10, 25], ['p-wstart', 0, 23], ['p-wlen', 1, 6], ['p-thr', 3, 20], ['p-swap', 3, 15]]) {
+    for (let v = lo; v <= hi; v++) await p.$eval('#' + id, (e, v) => { e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); }, v);
+    await check(`Predict: slider ${id} from ${lo} to ${hi}`);
+  }
+  for (const site of ['S12', 'S20', 'S08']) { await p.selectOption('#p-site', site); await check(`Predict: hourly profile ${site}`); }
+  await p.evaluate(() => { Predict.reset(); UI.show('predict'); });
   await p.evaluate(() => UI.show('how')); const boxes = await p.$$eval('[data-explain]', b => b.map(x => x.dataset.explain));
   for (const b of boxes) { await click(`[data-explain="${b}"]`); rec(await p.evaluate(() => document.getElementById('explain').textContent.length > 40), `How it works: box ${b} explains itself`); }
   await p.focus(`[data-explain="${boxes[0]}"]`); await p.keyboard.press('Enter'); await check('How it works: keyboard');
   await p.evaluate(() => UI.show('arch')); await check('Architecture'); await p.evaluate(() => UI.show('evidence')); await check('Evidence');
 
   // ---------- I. Guided: Next through all, Back, Leave, Return, End ----------
-  await p.evaluate(() => UI.startGuided('full'));
-  for (let k = 0; k < 13; k++) { await sleep(500); await check(`Guided step ${k + 1}`); await click('#g-next'); }
-  await sleep(500); await check('Guided step 14');
-  await click('#g-back'); rec(await p.evaluate(() => App.guidedStep === 13), 'Guided: Back goes to step 13');
-  await click('#g-leave'); rec(await p.evaluate(() => App.guided.paused && App.mode === 'explore'), 'Guided: Leave to Explore pauses the story');
-  await click('#g-return'); rec(await p.evaluate(() => !App.guided.paused && App.guidedStep === 13), 'Guided: Return resumes at the same step');
-  for (const b of ['explore', 'game', 'voice']) { await p.evaluate(() => UI.startGuided('full')); for (let k = 0; k < 13; k++) await p.evaluate(() => UI.guideNext()); await sleep(300); await click(`#guide-bar [data-go="${b}"]`); await sleep(300); rec(await p.evaluate(b => App.mode === b && App.screen === 'work', b), `Guided step 14: "${b}" button`); await p.evaluate(() => UI.stopGuided()); }
+  await speed(16); await p.evaluate(() => UI.startGuided('full'));
+  const gIds = await p.evaluate(() => UI.GUIDE_STEPS.map(s => s.id));
+  for (let k = 0; k < gIds.length; k++) {
+    await sleep(400); await check(`Guided ${gIds[k]}`);
+    if (k === gIds.length - 1) break;
+    let moved = false;
+    for (let t = 0; t < 300 && !moved; t++) { const ap = await p.$('#sc-pipe .approval #ap-approve:not([disabled])'); if (ap) await ap.click(); else { const rj = await p.$('#sc-pipe .approval #ap-reject:not([disabled])'); if (rj) await rj.click(); } const nx = await p.$('#g-next:not([disabled])'); if (nx) { await nx.click(); moved = true; } else await sleep(200); }
+    rec(moved, `Guided ${gIds[k]}: Next becomes available and moves on`);
+  }
+  const last = gIds[gIds.length - 1], prev = gIds[gIds.length - 2];
+  await click('#g-back'); rec(await p.evaluate(p => App.guidedStep === p, prev), `Guided: Back goes to ${prev}`);
+  await click('#g-leave'); rec(await p.evaluate(() => App.guided.paused && App.screen === 'work'), 'Guided: Leave to Explore pauses the story');
+  await click('#g-return'); rec(await p.evaluate(p => !App.guided.paused && App.guidedStep === p, prev), 'Guided: Return resumes at the same step');
+  for (let ch = 1; ch <= 9; ch++) { await p.selectOption('#g-chapter', String(ch)); await sleep(300); rec(await p.evaluate(ch => App.guidedStep === ch + '.1', ch), `Guided: chapter list jumps to chapter ${ch}`); }
+  for (const b of ['explore', 'game', 'voice']) { await p.evaluate(() => UI.startGuided('full')); await p.evaluate(n => UI.guideGoto(n), gIds.length - 1); await sleep(300); await click(`#guide-bar [data-go="${b}"]`); await sleep(300); rec(await p.evaluate(b => App.screen === 'work' && (b === 'voice' ? Scenarios.current().id === 'V' : App.mode === b), b), `Guided last step: "${b}" button`); await p.evaluate(() => UI.stopGuided()); }
   await check('Guided');
 
   // ---------- J. Long run in Explore at 16x on each warehouse ----------

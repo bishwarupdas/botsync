@@ -35,6 +35,20 @@ const expand = p => p.addStyleTag({ content: '.work{height:auto!important} .map-
   await p.waitForFunction(() => App.lastGame, null, { timeout: 30000 });
   await p.click('#g-avg'); await p.waitForFunction(() => App.lastAvg, null, { timeout: 90000 });
   await p.screenshot({ path: path.join(OUT, 'game_2_results.png'), fullPage: true });
+  // round 2 (after review): scenario V with the phone, step history cards, the Predict screen, a site history, Guided chapters, How it works chips
+  const plain = await open(DIR, { wait: 800 }), q = plain.page;
+  await q.evaluate(() => { UI.openScenario('V'); UI.setSpeed(1); }); await q.waitForTimeout(300); await q.click('#sc-run'); await q.waitForTimeout(9000);
+  await q.screenshot({ path: path.join(OUT, 'r2_voice_scenario_V.png') });
+  await q.evaluate(() => { UI.openScenario('U1'); }); await q.waitForTimeout(300); await q.click('[data-variant="fail"]'); await q.waitForTimeout(200); await q.evaluate(() => UI.setSpeed(4)); await q.click('#sc-run');
+  await q.waitForSelector('#sc-pipe .approval', { timeout: 60000 }); await q.waitForTimeout(500);
+  await q.screenshot({ path: path.join(OUT, 'r2_step_history_cards.png') });
+  await q.evaluate(() => UI.show('how')); await q.click('[data-explain="fix-propose"]'); await q.screenshot({ path: path.join(OUT, 'r2_how_it_works_kinds.png'), fullPage: true });
+  await q.evaluate(() => UI.show('predict')); await q.waitForTimeout(300); await q.screenshot({ path: path.join(OUT, 'r2_predict.png'), fullPage: true });
+  await q.evaluate(() => UI.show('site', { site: 'S08' })); await q.click('.sh-row'); await q.waitForTimeout(300); await q.screenshot({ path: path.join(OUT, 'r2_site_history_S08.png'), fullPage: true });
+  await q.evaluate(() => UI.startGuided('full')); await q.waitForTimeout(400); await q.screenshot({ path: path.join(OUT, 'r2_guided_chapter1.png') });
+  await q.evaluate(() => UI.guideGoto(UI.GUIDE_STEPS.findIndex(s => s.id === '5.2'))); await q.waitForTimeout(1500); await q.screenshot({ path: path.join(OUT, 'r2_guided_waits_for_decision.png') });
+  console.log(JSON.stringify({ round2errors: plain.log.console.concat(plain.log.pageErrors) }));
+  await plain.close();
   console.log(JSON.stringify({ errors: s.log.console.concat(s.log.pageErrors), external: s.log.requests.filter(u => !u.startsWith('file://')) }));
   await s.close();
 })();

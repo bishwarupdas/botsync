@@ -229,6 +229,7 @@
       figHtml(s7, 'box ' + st, '<svg viewBox="0 0 200 80" width="200" height="80">' + Draw.svgPipelineBox({ id: 'g' + st, x: 5, y: 5, title: st === 'waiting' ? 'Person fixes it' : 'Deterministic check', sub: 'Gate 1 at runtime', state: st, status: status, person: st === 'waiting' }) + '</svg>', 'pipe:box-' + st);
     });
     figHtml(s7, 'status chips', '<svg viewBox="0 0 300 24" width="300" height="24">' + Draw.svgChip('PASS', 60, 4) + Draw.svgChip('FAIL', 125, 4) + Draw.svgChip('WAITING', 210, 4) + Draw.svgChip('INFO', 270, 4) + '</svg>', 'pipe:chips');
+    figHtml(s7, 'kind chips (added after review)', '<svg viewBox="0 0 470 24" width="470" height="24">' + (function () { var x = 2, o = ''; ['LLM', 'VLM', 'SPEECH', 'CODE', 'ROBOT', 'PERSON', 'DATA'].forEach(function (k) { o += Draw.svgKindChip(k, x, 4); x += k.length * 7.4 + 16; }); return o; })() + '</svg>', 'pipe:kinds');
     figHtml(s7, 'arrows with branch labels', '<svg viewBox="0 0 220 90" width="220" height="90">' + Draw.svgArrow([[10, 20], [200, 20]], 'pass') + Draw.svgArrow([[10, 60], [200, 60]], 'fail') + '</svg>', 'pipe:arrows');
     figHtml(s7, 'person icon', '<svg viewBox="0 0 40 40" width="40" height="40">' + Draw.svgPersonIcon(20, 18, 18) + '</svg>', 'pipe:person');
     figHtml(s7, 'input / output panel', '<div style="width:300px;text-align:left">' + Draw.htmlIOPanel('{"code":"ERR_DOCKING_ALIGNMENT_TIMEOUT"}', 'clear_costmap, backup(1.5 m), rotate(15°), retry_dock') + '</div>', 'pipe:io');
@@ -822,7 +823,7 @@
       container._pipe = ctrl; container.removeAttribute('data-done'); container.removeAttribute('data-visited');
       var layout = spec.layout || 'fix', labels = spec.labels || {}, kinds = spec.kinds, who = spec.who || {};
       container.innerHTML = prevHtml + '<div class="pipeline" data-pipeline="' + layout + '"><div class="panel-title"><h3>' + esc(spec.title || 'Pipeline') + ' ' + (spec.scripted !== false ? tag('scripted') : '') + '</h3></div>' +
-        '<div class="pipe-controls"><span class="seg-group" role="group" aria-label="pacing"><button class="pipe-mode seg" data-mode="auto">Auto</button><button class="pipe-mode seg" data-mode="step">Step</button></span>' +
+        '<div class="pipe-controls"><span class="seg-group" role="group" aria-label="pacing"><button class="pipe-mode seg" data-pace="auto">Auto</button><button class="pipe-mode seg" data-pace="step">Step</button></span>' +
         '<button class="pipe-step">Next box</button><span class="small pipe-hint"></span></div>' +
         '<div class="pipe-now" aria-live="polite"></div>' +
         '<div class="pipe-svg" title="Click a box that has run to jump to its step below"></div>' +
@@ -833,10 +834,10 @@
       var root = $('.pipeline', container);
       var svgEl = $('.pipe-svg', root), hist = $('.pipe-history', root), nowEl = $('.pipe-now', root), resEl = $('.pipe-result', root);
       function modeUI() {
-        $$('.pipe-mode', root).forEach(function (b) { var on = (b.getAttribute('data-mode') === 'step') === App.pipeStepMode; b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
+        $$('.pipe-mode', root).forEach(function (b) { var on = (b.getAttribute('data-pace') === 'step') === App.pipeStepMode; b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
         $('.pipe-hint', root).textContent = App.pipeStepMode ? 'Step mode: each box waits for "Next box".' : 'Auto: each box holds for 2.5 s after its text (at 1x). Pause in the top bar freezes the flow.';
       }
-      $$('.pipe-mode', root).forEach(function (b) { b.onclick = function () { App.pipeStepMode = b.getAttribute('data-mode') === 'step'; modeUI(); }; });
+      $$('.pipe-mode', root).forEach(function (b) { b.onclick = function () { App.pipeStepMode = b.getAttribute('data-pace') === 'step'; modeUI(); }; });
       modeUI();
       $('.pipe-step', root).onclick = function () { ctrl.stepReq = true; };
       // the reader scrolled up to re-read: stop following new steps for a while
