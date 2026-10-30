@@ -297,7 +297,7 @@
   PASS C charging 12.4% vs 11.6% (±3 pts)
   PASS C emergency low-battery stops 1.6 vs 3 (±3)
   PASS C incidents 55.9 vs 59 (±20%)
-  selfTest(): 20 seeds x 30 days x 3 warehouses in 53.4 s
+  selfTest(): 20 seeds x 30 days x 3 warehouses in 51.8 s
   PASS same seed twice gives byte-identical results (7022 bytes)
   PASS a different seed gives a different result
 
@@ -383,9 +383,9 @@
   PASS 1024x768 arch: text >= 14 px (12 px only for labels, tags, chips): 0 smaller []
 
 === Test 17: Speed
-  PASS a week at 16x ran in 2.06 s (< 3 s)
-  PASS 20-run average finished in 4.7 s (< 60 s)
-  PASS page stayed responsive: longest gap between heartbeats 531 ms
+  PASS a week at 16x ran in 1.99 s (< 3 s)
+  PASS 20-run average finished in 4.9 s (< 60 s)
+  PASS page stayed responsive: longest gap between heartbeats 663 ms
 
 === Test 18: Assets gallery
   PASS 89 required assets present in the gallery (94 figures); missing: none

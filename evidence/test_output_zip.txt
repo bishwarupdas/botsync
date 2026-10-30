@@ -1,7 +1,7 @@
 === Test 16: Zip test
-zip size: 603672 bytes (0.58 MB)
+zip size: 604197 bytes (0.58 MB)
   PASS zip is under 5 MB
-unzipped into a new folder: /tmp/fresh_unzip.TZDSjn
+unzipped into a new folder: /tmp/fresh_unzip.yuRPe1
 Archive:  botsync_walkthrough.zip
   Length      Date    Time    Name
 ---------  ---------- -----   ----
@@ -17,7 +17,7 @@ Archive:  botsync_walkthrough.zip
    140538  2026-10-30 17:40   botsync_walkthrough/assets/js/ui.js
      3280  2026-10-30 14:37   botsync_walkthrough/assets/js/predict-calc.js
     63437  2026-10-30 14:37   botsync_walkthrough/assets/js/predict-data.js
-    25354  2026-10-30 17:40   botsync_walkthrough/assets/js/game.js
+    27190  2026-10-30 18:00   botsync_walkthrough/assets/js/game.js
     23428  2026-10-30 14:40   botsync_walkthrough/assets/js/predict.js
     78627  2026-10-30 17:40   botsync_walkthrough/assets/js/scenarios.js
     44861  2026-10-30 14:44   botsync_walkthrough/assets/js/draw.js
@@ -28,7 +28,7 @@ Archive:  botsync_walkthrough.zip
      5172  2026-10-30 17:25   botsync_walkthrough/index.html
       215  2026-10-30 09:50   botsync_walkthrough/README.txt
 ---------                     -------
-  1598201                     22 files
+  1600037                     22 files
 
 === Test 1: Opens clean (fresh unzip)
   PASS console errors/warnings: 0 []

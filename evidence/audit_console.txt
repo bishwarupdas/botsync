@@ -257,6 +257,8 @@ PASS Game A: cameras + agent -> warning gone, camera slider enabled
 PASS Game A: Reset restores defaults
 PASS Game A: Run a week + Skip -> scoreboard 21 rows; "On Warehouse A, battery swap raised the moving share from 67.2% to 77...."
 PASS Game A: scoreboard shows the swap-bay operators (busy share, wait per swap) and what the fixed cameras added
+PASS Game A: "Best case" turns every switch on, sets every assumption to its favourable end, runs a week and labels it a ceiling
+PASS Game A: Reset leaves the best case
 PASS Game A: Try another seed
 PASS Game A
 PASS Game B: cameras off -> its slider is greyed out and disabled
@@ -266,6 +268,8 @@ PASS Game B: cameras + agent -> warning gone, camera slider enabled
 PASS Game B: Reset restores defaults
 PASS Game B: Run a week + Skip -> scoreboard 21 rows; "On Warehouse B, battery swap raised the moving share from 61.1% to 68...."
 PASS Game B: scoreboard shows the swap-bay operators (busy share, wait per swap) and what the fixed cameras added
+PASS Game B: "Best case" turns every switch on, sets every assumption to its favourable end, runs a week and labels it a ceiling
+PASS Game B: Reset leaves the best case
 PASS Game B: Try another seed
 PASS Game B
 PASS Game C: cameras off -> its slider is greyed out and disabled
@@ -275,6 +279,8 @@ PASS Game C: cameras + agent -> warning gone, camera slider enabled
 PASS Game C: Reset restores defaults
 PASS Game C: Run a week + Skip -> scoreboard 21 rows; "On Warehouse C, battery swap raised the moving share from 68.4% to 76...."
 PASS Game C: scoreboard shows the swap-bay operators (busy share, wait per swap) and what the fixed cameras added
+PASS Game C: "Best case" turns every switch on, sets every assumption to its favourable end, runs a week and labels it a ceiling
+PASS Game C: Reset leaves the best case
 PASS Game C: Try another seed
 PASS Game C
 PASS Game: average of 20 runs
@@ -445,9 +451,9 @@ PASS Guided last step: "voice" button
 PASS Guided
 PASS Explore A run 25 s at 16x (16.1 h on the clock): 2 of 8 stopped now, 0 traffic stops in the log
 PASS Explore A long run
-PASS Explore B run 25 s at 16x (16.1 h on the clock): 2 of 17 stopped now, 1 traffic stops in the log
+PASS Explore B run 25 s at 16x (16.1 h on the clock): 3 of 17 stopped now, 2 traffic stops in the log
 PASS Explore B long run
-PASS Explore C run 25 s at 16x (16.6 h on the clock): 2 of 16 stopped now, 3 traffic stops in the log
+PASS Explore C run 25 s at 16x (16.6 h on the clock): 2 of 16 stopped now, 5 traffic stops in the log
 PASS Explore C long run
 PASS 1440x900: right panel fits the window and scrolls to its end on its own
 PASS 1440x900: the whole map stays in view while the right panel scrolls (map top 222 px, under the banner at 145 px)
@@ -466,4 +472,4 @@ PASS 1440: voice right panel fits the window (scrolls inside)
 PASS index.html#assets opens the gallery
 PASS gallery
 
-467 of 467 audit checks pass
+473 of 473 audit checks pass

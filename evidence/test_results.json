@@ -457,9 +457,9 @@
   "n": 17,
   "name": "Speed",
   "checks": [
-   "PASS a week at 16x ran in 2.06 s (< 3 s)",
-   "PASS 20-run average finished in 4.7 s (< 60 s)",
-   "PASS page stayed responsive: longest gap between heartbeats 531 ms"
+   "PASS a week at 16x ran in 1.99 s (< 3 s)",
+   "PASS 20-run average finished in 4.9 s (< 60 s)",
+   "PASS page stayed responsive: longest gap between heartbeats 663 ms"
   ],
   "pass": true
  },

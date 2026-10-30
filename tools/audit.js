@@ -218,6 +218,9 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     rec(sb.rows >= 13 && /Direction only/.test(sb.line), `Game ${w}: Run a week + Skip -> scoreboard ${sb.rows} rows; "${sb.line.slice(0, 70)}..."`);
     const gm = await p.evaluate(() => ({ ops: /Average wait for a free operator/.test(document.getElementById('g-out').textContent), cams: /fixed by the agent only because a fixed camera saw them/.test(document.getElementById('g-out').textContent) && /Fixed cameras let the agent fix \d+ more/.test(document.querySelector('[data-k="resultline"]').textContent) }));
     rec(gm.ops && gm.cams, `Game ${w}: scoreboard shows the swap-bay operators (busy share, wait per swap) and what the fixed cameras added`);
+    await click('#g-best'); await sleep(300); await click('#g-skip'); await sleep(400);
+    rec(await p.evaluate(() => { const P = Game.state.policy, q = Game.state.params; return P.swap && P.agent && P.triage && P.cams && q.swapTime === 3 && q.operators === 2 && q.spares === 0.6 && q.agentCan === 0.8 && q.headroom === 1 && !!document.querySelector('[data-k="best"]') && /read it as a ceiling/.test(document.querySelector('[data-k="resultline"]').textContent); }), `Game ${w}: "Best case" turns every switch on, sets every assumption to its favourable end, runs a week and labels it a ceiling`);
+    await click('#g-reset'); rec(await p.evaluate(() => !Game.state.best && Game.state.params.swapTime === 5), `Game ${w}: Reset leaves the best case`);
     await click('#g-seed'); rec(await p.evaluate(() => Game.state.seed === 2), `Game ${w}: Try another seed`); await p.evaluate(() => { Game.state.seed = 1; });
     await check(`Game ${w}`);
   }

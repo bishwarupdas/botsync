@@ -6,6 +6,14 @@
   var G = { policy: { swap: true, agent: false, triage: false, cams: false }, params: {}, seed: 1, stepper: null, last: null, avg: null, running: false };
   function defaults() { G.params = { headroom: A.headroom.v, swapTime: A.swapTimeMin.v, spares: A.sparePacksPerRobot.v, operators: A.swapOperators.v, agentCan: A.agentCan.v, gatePass: A.gatePass.v, triageSaving: A.triageSaving.v, camUplift: A.camUplift.v }; }
   defaults();
+  /* Best case (added after review): every switch on and every assumption at the most favourable end of its allowed range.
+     Swap time is best at its minimum; every other slider at its maximum. An upper bound for play, not a forecast. */
+  var BEST_LOW = { swapTime: true };
+  function bestCase() {
+    G.policy = { swap: true, agent: true, triage: true, cams: true };
+    var P = UI.PDEF; Object.keys(G.params).forEach(function (k) { if (P[k]) G.params[k] = BEST_LOW[k] ? P[k].min : P[k].max; });
+    G.best = true;
+  }
 
   function idleSim() { App.gameSim = Sim.create({ wh: App.wh, seed: G.seed, days: DAYS, mode: 'game', policy: G.policy, params: G.params }); }
 
@@ -26,7 +34,8 @@
       gated('agent', UI.sliderHtml('agentCan', P.agentCan, G.params.agentCan, 'Agent can propose a fix', F.agentCan) + UI.sliderHtml('gatePass', P.gatePass, G.params.gatePass, 'Gate pass rate', F.gatePass), 'Recovery agent') +
       gated('cams', UI.sliderHtml('camUplift', P.camUplift, G.params.camUplift, 'Fixed cameras: extra chance the agent can propose a fix on camera-dependent stops', F.camUplift).replace('<span class="tag assumed">assumed</span>', '<span class="tag assumed">assumed (author estimate)</span>'), 'Fixed cameras') +
       gated('triage', UI.sliderHtml('triageSaving', P.triageSaving, G.params.triageSaving, 'Triage saving on no-fault-found hours', F.triageSaving), 'Triage') +
-      '<div class="btn-row"><button id="g-reset">Reset to defaults</button></div>' +
+      '<div class="btn-row"><button id="g-reset">Reset to defaults</button><button id="g-best" title="Every switch on, every assumption at its most favourable end, then run a week">Best case</button></div>' +
+      (G.best ? '<p class="note-line" id="g-best-note"><strong>Best case set:</strong> every switch is on and every assumption sits at the most favourable end of its range (swap ' + G.params.swapTime + ' min, ' + G.params.operators + ' operators, ' + (+G.params.spares).toFixed(2) + ' spare packs per robot, agent ' + Math.round(G.params.agentCan * 100) + '%, gate ' + Math.round(G.params.gatePass * 100) + '%, cameras +' + Math.round(G.params.camUplift * 100) + ' points, ' + Math.round(G.params.headroom * 100) + '% work waiting). It is an upper bound for play, not a forecast. Change anything to leave it.</p>' : '') +
       '<h3>4. Run</h3><div class="btn-row"><button class="primary" id="g-run">Run a week</button><button id="g-skip" disabled>Skip to result</button><button id="g-avg">Average of 20 runs</button><button id="g-seed">Try another seed</button></div>' +
       '<p class="small">Seed <span id="g-seedv">' + G.seed + '</span>. Today and your policy use the same seed. Speed in the top bar sets the animation (a week takes about ' + WEEK_SECONDS_AT_1X + ' s at 1x).</p>' +
       '<div class="progress" aria-label="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="g-prog" style="width:0%"></div></div>' +
@@ -66,16 +75,18 @@
     });
     var w = root.querySelector('#cams-warn'); if (w) w.hidden = !(G.policy.cams && !G.policy.agent);
   }
+  function leaveBest() { if (!G.best) return; G.best = false; var n = document.getElementById('g-best-note'); if (n) n.remove(); }
   function bind(root) {
     root.querySelectorAll('[data-policy]').forEach(function (b) {
       if (b.disabled) return;
-      b.onclick = function () { var k = b.dataset.policy; G.policy[k] = !G.policy[k]; b.setAttribute('aria-pressed', String(G.policy[k])); updateGates(root); renderLogic(); };
+      b.onclick = function () { var k = b.dataset.policy; G.policy[k] = !G.policy[k]; b.setAttribute('aria-pressed', String(G.policy[k])); updateGates(root); renderLogic(); leaveBest(); };
     });
     updateGates(root);
     root.querySelectorAll('input[data-param]').forEach(function (inp) {
-      inp.oninput = function () { var k = inp.dataset.param; G.params[k] = +inp.value; document.getElementById('slv-' + k).textContent = UI.FMT[k](+inp.value); renderLogic(); };
+      inp.oninput = function () { var k = inp.dataset.param; G.params[k] = +inp.value; document.getElementById('slv-' + k).textContent = UI.FMT[k](+inp.value); renderLogic(); leaveBest(); };
     });
-    document.getElementById('g-reset').onclick = function () { defaults(); render(); };
+    document.getElementById('g-reset').onclick = function () { defaults(); G.best = false; render(); };
+    document.getElementById('g-best').onclick = function () { if (G.running) return; bestCase(); render(); runWeek(); };
     document.getElementById('g-run').onclick = function () { runWeek(); };
     document.getElementById('g-skip').onclick = function () { if (G.stepper) { G.stepper.advance(Infinity); finishWeek(); } };
     document.getElementById('g-avg').onclick = function () { runAverage(); };
@@ -97,7 +108,7 @@
     if (G.stepper.done()) finishWeek();
   }
   function finishWeek() {
-    G.running = false; G.last = G.stepper.result(); G.last.ms = performance.now() - G.t0; G.last.wh = App.wh; G.last.switches = JSON.parse(JSON.stringify(G.policy)); G.last.params = JSON.parse(JSON.stringify(G.params));
+    G.running = false; G.last = G.stepper.result(); G.last.ms = performance.now() - G.t0; G.last.wh = App.wh; G.last.switches = JSON.parse(JSON.stringify(G.policy)); G.last.params = JSON.parse(JSON.stringify(G.params)); G.last.best = !!G.best;
     window.App.lastGame = { ms: G.last.ms, returned: G.last.robotHoursReturned, extra: G.last.extraPalletMoves, todayVolume: G.last.todayVolume, headroom: G.last.headroom, wh: App.wh, policy: G.last.switches };
     var pr = document.getElementById('g-prog'); if (pr) pr.style.width = '100%';
     var sk = document.getElementById('g-skip'), rn = document.getElementById('g-run'), out = document.getElementById('g-out');
@@ -112,7 +123,7 @@
   function only(label, v, f) { return '<tr><td>' + label + '</td><td class="n">no swap bay</td><td class="n">' + N(sim(v), f) + '</td><td class="n"></td></tr>'; }
   function scoreboard(r) {
     var t = r.today, p = r.policy, P = r.switches || G.policy, ppm = A.palletsPerMovingHour.v;
-    var html = '<h3>Scoreboard: Warehouse ' + (r.wh || App.wh) + ', one week ' + tag('simulated') + '</h3><table class="score"><thead><tr><th></th><th class="n">Today</th><th class="n">Your policy</th><th class="n">difference</th></tr></thead><tbody>' +
+    var html = '<h3>Scoreboard: Warehouse ' + (r.wh || App.wh) + ', one week' + (r.best ? ', <span data-k="best">best case</span>' : '') + ' ' + tag('simulated') + '</h3><table class="score"><thead><tr><th></th><th class="n">Today</th><th class="n">Your policy</th><th class="n">difference</th></tr></thead><tbody>' +
       '<tr><td><strong>Robot time returned (hours)</strong></td><td class="n"></td><td class="n">' + N(sim(r.robotHoursReturned), 'f1') + '</td><td class="n"><strong data-k="returned">' + UI.fmtNum(r.robotHoursReturned, 'f1') + '</strong></td></tr>' +
       '<tr><td><strong>Extra pallet moves</strong> (capped by headroom)</td><td class="n"></td><td class="n">' + N(sim(r.extraPalletMoves), 'int') + '</td><td class="n"><strong data-k="extra">' + UI.fmtNum(r.extraPalletMoves, 'int') + '</strong></td></tr>' +
       row('Pallet moves', t.palletMoves, p.palletMoves, 'int') + row('Share moving', t.shareMoving, p.shareMoving, 'pct1') + row('Share charging', t.shareCharging, p.shareCharging, 'pct1') +
@@ -146,6 +157,7 @@
     if (P.triage) bits.push('Triage returned no robot time; it cut engineering hours on no-fault-found tickets from ' + t.noFaultFoundEngineeringHours.toFixed(0) + ' to ' + p.noFaultFoundEngineeringHours.toFixed(0) + ' (fleet, 30 days) and raised confirmed causes to ' + Math.round(p.confirmedCausePercent * 100) + '%.');
     if (!P.swap && !P.agent && !P.triage && !P.cams) bits.push('No policy is on, so the two runs are the same.');
     bits.push('Robot time returned: ' + r.robotHoursReturned.toFixed(1) + ' hours; extra pallet moves: ' + Math.round(r.extraPalletMoves) + (r.workRanOut && r.robotHoursReturned > 1 ? ' (work ran out)' : '') + '.');
+    if (r.best) bits.push('This is the best case: every assumption at its most favourable end, so read it as a ceiling. Defaults give the more likely direction.');
     bits.push('Direction only: swap time, spare packs and the agent\'s success rate are assumed.');
     return bits.join(' ');
   }
@@ -178,5 +190,5 @@
 
   UI.register('game', function () { render(); });
   App.on('warehouse', function () { if (App.screen === 'work' && App.mode === 'game') { G.running = false; G.last = null; G.avg = null; render(); } });
-  window.Game = { renderLogic: renderLogic, frame: frame, state: G, render: render, runWeek: runWeek, runAverage: runAverage, defaults: defaults };
+  window.Game = { bestCase: bestCase, renderLogic: renderLogic, frame: frame, state: G, render: render, runWeek: runWeek, runAverage: runAverage, defaults: defaults };
 })();
