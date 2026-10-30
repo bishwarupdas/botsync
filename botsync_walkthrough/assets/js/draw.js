@@ -20,8 +20,9 @@
     mono: 'ui-monospace, Menlo, Consolas, monospace'
   };
   var C = {
-    black: '#000000', white: '#FFFFFF', red: '#C62828', green: '#2E7D32', amber: '#B26A00',
-    grey: '#9E9E9E', light: '#EEEEEE', mid: '#BDBDBD', dark: '#424242'
+    black: '#2B2D31', white: '#FCFBF8', red: '#C62828', green: '#2E7D32', amber: '#B26A00',
+    grey: '#9E9E9E', light: '#EEEEEE', mid: '#BDBDBD', dark: '#424242',
+    accent: '#1F5FA8', accentDark: '#173E6E', accentSoft: '#E4EDF8', teal: '#12807F', rack: '#DDE6F0', rackLine: '#B4C4D8', floor: '#F1F4F2'
   };
 
   /* Seeded PRNG (mulberry32) shared with sim.js */
@@ -76,7 +77,7 @@
     var carrying = state === 'carrying' || opts.carrying;
     var selected = state === 'selected' || opts.selected;
     var grey = state === 'idle';
-    var outline = grey ? C.grey : C.black, lw = 1.5, dash = null;
+    var outline = grey ? C.grey : C.accentDark, lw = 1.5, dash = null;
     if (state === 'queue') dash = [4, 3];
     if (state === 'stopped') { outline = C.red; lw = 3; }
     if (state === 'recovering' || state === 'waitingForPerson') { outline = C.amber; lw = 2; }
@@ -86,13 +87,13 @@
 
     ctx.save(); ctx.globalAlpha = alpha; ctx.translate(x, y); ctx.rotate(a || 0);
     // forks
-    ctx.fillStyle = C.white; ctx.strokeStyle = grey ? C.grey : C.black; ctx.lineWidth = 1;
+    ctx.fillStyle = C.white; ctx.strokeStyle = grey ? C.grey : C.accentDark; ctx.lineWidth = 1;
     [-5.5, 5.5].forEach(function (fy) { ctx.fillRect(15, fy - 1.5, 16, 3); ctx.strokeRect(15, fy - 1.5, 16, 3); });
     if (carrying) drawPallet(ctx, 23, 0, 0, 'good', { w: 18, h: 14, load: true });
     // swapping: pack half out of the rear
     if (state === 'swapping') drawPack(ctx, -15, 0, 0, 'out', {});
     // body
-    rr(ctx, -15, -10, 30, 20, 3); ctx.fillStyle = C.white; ctx.fill();
+    rr(ctx, -15, -10, 30, 20, 3); ctx.fillStyle = grey ? C.white : (state === 'stopped' ? C.white : C.accentSoft); ctx.fill();
     ctx.save(); if (dash) ctx.setLineDash(dash); ctx.strokeStyle = outline; ctx.lineWidth = lw; ctx.stroke(); ctx.restore();
     // lidar half-disc and camera
     ctx.fillStyle = grey ? C.grey : C.black;
@@ -145,7 +146,7 @@
     var x0 = x - 13, y0 = y - 2.5;
     ctx.save(); ctx.fillStyle = C.white; ctx.fillRect(x0, y0, 26, 5);
     if (low) hatch(ctx, x0, y0, 26 * b, 5, 2.5, C.black, 1);
-    else { ctx.fillStyle = C.black; ctx.fillRect(x0, y0, 26 * b, 5); }
+    else { ctx.fillStyle = C.accent; ctx.fillRect(x0, y0, 26 * b, 5); }
     if (state === 'charging' && !opts.reducedMotion) {
       var p = ((opts.t || 0) / 1500) % 1;   // a white sweep moving left to right inside the fill
       ctx.fillStyle = C.white; ctx.fillRect(x0 + 26 * b * p, y0 + 1, 2, 3);
@@ -247,13 +248,13 @@
 
   /* ---------- A4. Building ---------- */
   function drawBuilding(ctx, x, y, a, state, opts) {
-    ctx.save(); ctx.fillStyle = C.white; ctx.fillRect(x, y, opts.w, opts.h);
-    ctx.strokeStyle = C.black; ctx.lineWidth = 3; ctx.strokeRect(x + 1.5, y + 1.5, opts.w - 3, opts.h - 3); ctx.restore();
+    ctx.save(); ctx.fillStyle = C.floor; ctx.fillRect(x, y, opts.w, opts.h);
+    ctx.strokeStyle = C.accentDark; ctx.lineWidth = 3; ctx.strokeRect(x + 1.5, y + 1.5, opts.w - 3, opts.h - 3); ctx.restore();
   }
   function drawRack(ctx, x, y, a, state, opts) {
     var w = opts.w, h = opts.h;
-    ctx.save(); ctx.fillStyle = C.light; ctx.fillRect(x, y, w, h); ctx.strokeStyle = C.black; ctx.lineWidth = 1; ctx.strokeRect(x, y, w, h);
-    ctx.strokeStyle = C.mid; ctx.beginPath();
+    ctx.save(); ctx.fillStyle = C.rack; ctx.fillRect(x, y, w, h); ctx.strokeStyle = C.accentDark; ctx.lineWidth = 1; ctx.strokeRect(x, y, w, h);
+    ctx.strokeStyle = C.rackLine; ctx.beginPath();
     for (var i = 12; i < w; i += 12) { ctx.moveTo(x + i, y); ctx.lineTo(x + i, y + h); }
     ctx.stroke(); ctx.restore();
     if (opts.label) {
@@ -294,7 +295,7 @@
     opts = opts || {};
     ctx.save(); ctx.translate(x, y); ctx.rotate(a || 0);
     ctx.fillStyle = C.white; ctx.fillRect(-18, -7, 36, 14); ctx.strokeStyle = C.black; ctx.lineWidth = 1; ctx.strokeRect(-18, -7, 36, 14);
-    for (var i = 0; i < 6; i++) line(ctx, -15 + i * 6, -7, -15 + i * 6, 7, C.grey, 1);
+    for (var i = 0; i < 6; i++) line(ctx, -15 + i * 6, -7, -15 + i * 6, 7, C.teal, 1);
     ctx.beginPath(); ctx.moveTo(-6, 0); ctx.lineTo(8, 0); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(11, 0); ctx.lineTo(6, -3); ctx.lineTo(6, 3); ctx.closePath(); ctx.fillStyle = C.black; ctx.fill();
     ctx.restore();
@@ -302,12 +303,12 @@
   }
   function drawStaging(ctx, x, y, a, state, opts) {
     opts = opts || {};
-    ctx.save(); ctx.setLineDash([3, 2]); ctx.strokeStyle = C.black; ctx.lineWidth = 1; ctx.strokeRect(x - 15, y - 12, 30, 24); ctx.restore();
+    ctx.save(); ctx.setLineDash([3, 2]); ctx.strokeStyle = C.teal; ctx.lineWidth = 1.5; ctx.strokeRect(x - 15, y - 12, 30, 24); ctx.restore();
     if (opts.label) text(ctx, opts.label, x, y, 12, opts, { bold: true });
   }
   function drawCharger(ctx, x, y, a, state, opts) {
-    ctx.save(); ctx.fillStyle = state === 'occupied' ? C.light : C.white; ctx.fillRect(x - 6, y - 6, 12, 12);
-    ctx.strokeStyle = C.black; ctx.lineWidth = 1; ctx.strokeRect(x - 6, y - 6, 12, 12);
+    ctx.save(); ctx.fillStyle = state === 'occupied' ? '#CDEBE9' : C.white; ctx.fillRect(x - 6, y - 6, 12, 12);
+    ctx.strokeStyle = C.teal; ctx.lineWidth = 1; ctx.strokeRect(x - 6, y - 6, 12, 12);
     ctx.beginPath(); ctx.moveTo(x - 3, y - 4); ctx.lineTo(x + 1, y - 0.5); ctx.lineTo(x - 1, y + 0.5); ctx.lineTo(x + 3, y + 4); ctx.stroke();
     ctx.restore();
   }
@@ -353,10 +354,10 @@
   /* ---------- A5. Overlays ---------- */
   function drawRouteLine(ctx, x, y, a, state, opts) {
     var p = opts.points; if (!p || p.length < 2) return;
-    ctx.save(); ctx.setLineDash([6, 4]); ctx.strokeStyle = C.black; ctx.lineWidth = 1.5; ctx.beginPath();
+    ctx.save(); ctx.setLineDash([6, 4]); ctx.strokeStyle = C.accent; ctx.lineWidth = 2; ctx.beginPath();
     ctx.moveTo(p[0][0], p[0][1]); for (var i = 1; i < p.length; i++) ctx.lineTo(p[i][0], p[i][1]); ctx.stroke(); ctx.setLineDash([]);
     var e = p[p.length - 1], s = p[p.length - 2], ang = Math.atan2(e[1] - s[1], e[0] - s[0]);
-    ctx.fillStyle = C.black; ctx.beginPath(); ctx.moveTo(e[0], e[1]);
+    ctx.fillStyle = C.accent; ctx.beginPath(); ctx.moveTo(e[0], e[1]);
     ctx.lineTo(e[0] - 8 * Math.cos(ang - 0.4), e[1] - 8 * Math.sin(ang - 0.4)); ctx.lineTo(e[0] - 8 * Math.cos(ang + 0.4), e[1] - 8 * Math.sin(ang + 0.4)); ctx.closePath(); ctx.fill();
     ctx.restore();
   }
@@ -484,18 +485,19 @@
   function svgChip(status, x, y) {
     var col = { PASS: C.green, FAIL: C.red, WAITING: C.amber, INFO: '#616161' }[status] || '#616161';
     var w = status.length * 8 + 12;
-    return '<g class="chip chip-' + status + '"><rect x="' + (x - w) + '" y="' + y + '" width="' + w + '" height="16" rx="2" fill="#fff" stroke="' + col + '"/>' +
+    return '<g class="chip chip-' + status + '"><rect x="' + (x - w) + '" y="' + y + '" width="' + w + '" height="16" rx="2" fill="#FCFBF8" stroke="' + col + '"/>' +
       '<text x="' + (x - w / 2) + '" y="' + (y + 12) + '" text-anchor="middle" font-size="12" font-weight="bold" fill="' + col + '">' + status + '</text></g>';
   }
   function svgPersonIcon(x, y, size) {
     var s = (size || 18) / 14;
-    return '<g class="person-icon" transform="translate(' + x + ',' + y + ') scale(' + s + ')" stroke="#000" fill="none" stroke-width="1.2">' +
+    return '<g class="person-icon" transform="translate(' + x + ',' + y + ') scale(' + s + ')" stroke="#2B2D31" fill="none" stroke-width="1.2">' +
       '<circle cx="0" cy="-4" r="3"/><path d="M0 -1 V5 M-3.5 1.5 H3.5 M0 5 L-3 10 M0 5 L3 10"/></g>';
   }
   function svgPipelineBox(o) {
     // o: {id, x, y, title, sub, state: idle|active|done|failed|waiting|skipped, status: PASS|FAIL|WAITING|INFO, person, scripted}
-    var stroke = '#000', sw = 1, fill = '#fff', tcol = '#000';
-    if (o.state === 'active') sw = 3;
+    var stroke = '#2B2D31', sw = 1, fill = '#FCFBF8', tcol = '#2B2D31';
+    if (o.state === 'active') { sw = 3; stroke = C.accent; fill = C.accentSoft; }
+    if (o.state === 'done') { stroke = C.accentDark; fill = '#F3F7FC'; }
     if (o.state === 'failed') { stroke = C.red; sw = 2; }
     if (o.state === 'waiting') { stroke = C.amber; sw = 2.5; }
     if (o.state === 'skipped' || o.state === 'idle') { stroke = C.grey; tcol = '#616161'; }
@@ -505,7 +507,7 @@
     if (o.person) s += svgPersonIcon(o.x + 13, o.y + 16, 18);
     s += '<text x="' + tx + '" y="' + (o.y + 22) + '" font-size="14" font-weight="bold" fill="' + tcol + '">' + esc(o.title) + '</text>';
     if (o.sub) s += '<text x="' + tx + '" y="' + (o.y + 40) + '" font-size="12" fill="' + tcol + '">' + esc(o.sub) + '</text>';
-    if (o.state === 'done') s += '<path d="M' + (o.x + 168) + ' ' + (o.y + 14) + ' l4 5 l8 -10" stroke="#000" stroke-width="1.5" fill="none"/>';
+    if (o.state === 'done') s += '<path d="M' + (o.x + 168) + ' ' + (o.y + 14) + ' l4 5 l8 -10" stroke="#2B2D31" stroke-width="1.5" fill="none"/>';
     if (o.state === 'failed') s += '<text x="' + (o.x + 182) + '" y="' + (o.y + 22) + '" text-anchor="end" font-size="12" font-weight="bold" fill="' + C.red + '">FAIL</text>';
     if (o.status) s += svgChip(o.status, o.x + 184, o.y + 48);
     return s + '</g>';
@@ -515,12 +517,12 @@
     var d = 'M' + pts.map(function (p) { return p[0] + ' ' + p[1]; }).join(' L');
     var e = pts[pts.length - 1], s = pts[pts.length - 2], ang = Math.atan2(e[1] - s[1], e[0] - s[0]);
     var h1 = [e[0] - 6 * Math.cos(ang - 0.45), e[1] - 6 * Math.sin(ang - 0.45)], h2 = [e[0] - 6 * Math.cos(ang + 0.45), e[1] - 6 * Math.sin(ang + 0.45)];
-    var col = opts.dim ? C.grey : '#000';
+    var col = opts.dim ? C.grey : '#2B2D31';
     var out = '<g class="arrow' + (opts.dim ? ' dim' : '') + '"><path d="' + d + '" stroke="' + col + '" stroke-width="1.5" fill="none"/>' +
       '<path d="M' + e[0] + ' ' + e[1] + ' L' + h1[0] + ' ' + h1[1] + ' L' + h2[0] + ' ' + h2[1] + ' Z" fill="' + col + '"/>';
     if (label) {
       var m = opts.labelAt || [(pts[0][0] + pts[1][0]) / 2, (pts[0][1] + pts[1][1]) / 2];
-      out += '<rect x="' + (m[0] - label.length * 3.4 - 3) + '" y="' + (m[1] - 9) + '" width="' + (label.length * 6.8 + 6) + '" height="15" fill="#fff"/>' +
+      out += '<rect x="' + (m[0] - label.length * 3.4 - 3) + '" y="' + (m[1] - 9) + '" width="' + (label.length * 6.8 + 6) + '" height="15" fill="#FCFBF8"/>' +
         '<text x="' + m[0] + '" y="' + (m[1] + 3) + '" text-anchor="middle" font-size="12" fill="' + col + '">' + esc(label) + '</text>';
     }
     return out + '</g>';
@@ -542,36 +544,36 @@
   var TIME_PATTERNS = ['moving', 'charging', 'idle', 'stopped'];
   function defsSvg() {
     return '<defs>' +
-      '<pattern id="pat-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#fff"/><line x1="0" y1="0" x2="0" y2="6" stroke="#000" stroke-width="2"/></pattern>' +
-      '<pattern id="pat-redx" width="7" height="7" patternUnits="userSpaceOnUse"><rect width="7" height="7" fill="#fff"/><path d="M0 0 L7 7 M7 0 L0 7" stroke="' + C.red + '" stroke-width="1.2"/></pattern>' +
+      '<pattern id="pat-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#FCFBF8"/><line x1="0" y1="0" x2="0" y2="6" stroke="' + C.teal + '" stroke-width="2"/></pattern>' +
+      '<pattern id="pat-redx" width="7" height="7" patternUnits="userSpaceOnUse"><rect width="7" height="7" fill="#FCFBF8"/><path d="M0 0 L7 7 M7 0 L0 7" stroke="' + C.red + '" stroke-width="1.2"/></pattern>' +
       '</defs>';
   }
-  function patFill(kind) { return { moving: '#000', charging: 'url(#pat-hatch)', idle: C.light, stopped: 'url(#pat-redx)', other: '#fff' }[kind]; }
+  function patFill(kind) { return { moving: C.accent, charging: 'url(#pat-hatch)', idle: C.light, stopped: 'url(#pat-redx)', other: '#FCFBF8' }[kind]; }
   function svgTimeShareBar(o) {
     // o: {segments:[{kind,label,frac,text}], width, height}
     var W = o.width || 600, H = o.height || 26, x = 0, s = '<svg class="timeshare" viewBox="0 0 ' + W + ' ' + (H + 26) + '" width="100%" role="img" aria-label="' + esc(o.aria || 'time share bar') + '">' + defsSvg();
     o.segments.forEach(function (g) {
       var w = Math.max(0, g.frac * W);
-      s += '<rect x="' + x + '" y="0" width="' + w + '" height="' + H + '" fill="' + patFill(g.kind) + '" stroke="#000" stroke-width="1"/>';
+      s += '<rect x="' + x + '" y="0" width="' + w + '" height="' + H + '" fill="' + patFill(g.kind) + '" stroke="#2B2D31" stroke-width="1"/>';
       x += w;
     });
-    s += '<rect x="0" y="0" width="' + W + '" height="' + H + '" fill="none" stroke="#000"/>';
+    s += '<rect x="0" y="0" width="' + W + '" height="' + H + '" fill="none" stroke="#2B2D31"/>';
     x = 0;
     o.segments.forEach(function (g) { var w = g.frac * W; if (g.text) s += '<text x="' + (x + 2) + '" y="' + (H + 16) + '" font-size="12">' + esc(g.text) + '</text>'; x += Math.max(w, 0); });
     return s + '</svg>';
   }
   function svgLegendSwatch(kind) {
-    return '<svg class="swatch" width="22" height="14" aria-hidden="true">' + defsSvg() + '<rect x="0.5" y="0.5" width="21" height="13" fill="' + patFill(kind) + '" stroke="#000"/></svg>';
+    return '<svg class="swatch" width="22" height="14" aria-hidden="true">' + defsSvg() + '<rect x="0.5" y="0.5" width="21" height="13" fill="' + patFill(kind) + '" stroke="#2B2D31"/></svg>';
   }
   function svgComparisonBars(rows, opts) {
     // rows: [{label, a, b, fmt, aText, bText, diffText}] a = Today (outline), b = Your policy (solid)
     opts = opts || {};
-    var W = opts.width || 420, rowH = 40, labelW = 0, barW = W - 150, H = rows.length * rowH + 4;
+    var W = opts.width || 420, rowH = 40, labelW = 0, barW = W - 240, H = rows.length * rowH + 4;
     var s = '<svg class="compare" viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="Today vs your policy">';
     rows.forEach(function (r, i) {
       var y = i * rowH + 2, m = Math.max(r.a, r.b, 1e-9);
-      s += '<rect x="' + labelW + '" y="' + (y + 4) + '" width="' + (barW * r.a / m) + '" height="8" fill="#fff" stroke="#000"/>';
-      s += '<rect x="' + labelW + '" y="' + (y + 16) + '" width="' + (barW * r.b / m) + '" height="8" fill="#000"/>';
+      s += '<rect x="' + labelW + '" y="' + (y + 4) + '" width="' + (barW * r.a / m) + '" height="8" fill="#FCFBF8" stroke="#2B2D31"/>';
+      s += '<rect x="' + labelW + '" y="' + (y + 16) + '" width="' + (barW * r.b / m) + '" height="8" fill="' + C.accent + '"/>';
       s += '<text x="' + (barW + 6) + '" y="' + (y + 12) + '" font-size="12">' + esc(r.aText) + '</text>';
       s += '<text x="' + (barW + 6) + '" y="' + (y + 25) + '" font-size="12">' + esc(r.bText) + '</text>';
       if (r.diffText) s += '<text x="' + (W - 2) + '" y="' + (y + 19) + '" text-anchor="end" font-size="12" font-weight="bold">' + esc(r.diffText) + '</text>';
@@ -588,13 +590,13 @@
       s += '<text x="0" y="' + (y + 13) + '" font-size="12">' + esc(r.robot) + '</text>';
       r.bars.forEach(function (b) {
         var bx = left + b.start * sc, bw = Math.max(2, (b.end - b.start) * sc);
-        s += '<rect x="' + bx + '" y="' + y + '" width="' + bw + '" height="16" fill="#fff" stroke="' + (b.close ? C.amber : '#000') + '" stroke-width="' + (b.close ? 2 : 1) + '"/>';
+        s += '<rect x="' + bx + '" y="' + y + '" width="' + bw + '" height="16" fill="' + C.accentSoft + '" stroke="' + (b.close ? C.amber : C.accent) + '" stroke-width="' + (b.close ? 2 : 1) + '"/>';
         if (bw > 30) s += '<text x="' + (bx + 3) + '" y="' + (y + 12) + '" font-size="12">' + esc(b.label) + '</text>';
       });
     });
     if (opts.deadline != null) {
       var dx = left + opts.deadline * sc;
-      s += '<line x1="' + dx + '" y1="0" x2="' + dx + '" y2="' + (H - 16) + '" stroke="#000" stroke-dasharray="4 3"/>' +
+      s += '<line x1="' + dx + '" y1="0" x2="' + dx + '" y2="' + (H - 16) + '" stroke="#2B2D31" stroke-dasharray="4 3"/>' +
         '<text x="' + dx + '" y="' + (H - 3) + '" text-anchor="middle" font-size="12">' + esc(opts.deadlineLabel || 'deadline') + '</text>';
     }
     return s + '</svg>';
@@ -617,12 +619,12 @@
 
   /* ---------- A10. Phone mock ---------- */
   function svgMic(listening, reducedMotion) {
-    var s = '<svg class="mic" viewBox="0 0 64 64" width="64" height="64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="#fff" stroke="#000" stroke-width="2"/>';
+    var s = '<svg class="mic" viewBox="0 0 64 64" width="64" height="64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="#FCFBF8" stroke="#2B2D31" stroke-width="2"/>';
     if (listening) {
       var hs = [10, 18, 26, 18, 10];
-      hs.forEach(function (h, i) { s += '<rect class="' + (reducedMotion ? '' : 'pulse pulse' + i) + '" x="' + (17 + i * 7) + '" y="' + (32 - h / 2) + '" width="4" height="' + h + '" fill="#000"/>'; });
+      hs.forEach(function (h, i) { s += '<rect class="' + (reducedMotion ? '' : 'pulse pulse' + i) + '" x="' + (17 + i * 7) + '" y="' + (32 - h / 2) + '" width="4" height="' + h + '" fill="#2B2D31"/>'; });
     } else {
-      s += '<rect x="27" y="16" width="10" height="20" rx="5" fill="#fff" stroke="#000" stroke-width="2"/><path d="M22 30 Q22 42 32 42 Q42 42 42 30" fill="none" stroke="#000" stroke-width="2"/><path d="M32 42 V48 M26 48 H38" stroke="#000" stroke-width="2"/>';
+      s += '<rect x="27" y="16" width="10" height="20" rx="5" fill="#FCFBF8" stroke="#2B2D31" stroke-width="2"/><path d="M22 30 Q22 42 32 42 Q42 42 42 30" fill="none" stroke="#2B2D31" stroke-width="2"/><path d="M32 42 V48 M26 48 H38" stroke="#2B2D31" stroke-width="2"/>';
     }
     return s + '</svg>';
   }

@@ -295,7 +295,7 @@
   PASS C charging 12.3% vs 11.6% (±3 pts)
   PASS C emergency low-battery stops 1.5 vs 3 (±3)
   PASS C incidents 55.9 vs 59 (±20%)
-  selfTest(): 20 seeds x 30 days x 3 warehouses in 50.2 s
+  selfTest(): 20 seeds x 30 days x 3 warehouses in 49.3 s
   PASS same seed twice gives byte-identical results (6706 bytes)
   PASS a different seed gives a different result
 
@@ -369,20 +369,20 @@
   PASS 1024x768 arch: text >= 14 px (12 px only for labels, tags, chips): 0 smaller []
 
 === Test 17: Speed
-  PASS a week at 16x ran in 2.07 s (< 3 s)
-  PASS 20-run average finished in 3.9 s (< 60 s)
-  PASS page stayed responsive: longest gap between heartbeats 441 ms
+  PASS a week at 16x ran in 1.99 s (< 3 s)
+  PASS 20-run average finished in 4.6 s (< 60 s)
+  PASS page stayed responsive: longest gap between heartbeats 602 ms
 
 === Test 18: Assets gallery
   PASS 88 required assets present in the gallery (93 figures); missing: none
   PASS no canvas asset is blank (none blank)
   PASS no asset drawn into its canvas edge (clipping check): none clipped
-  PASS palette: 25220 coloured pixels; outside red, green, amber hues: 0 {}
+  PASS palette: 92564 coloured pixels; outside the state hues (red, green, amber) and the decoration hues (teal, blue, violet): 11 {"160":2,"170":1,"340":8}
   PASS draw.js exports 42 asset functions, matching the 42 listed for 7A (A1 robot+battery bar, A2 pallet+load, A3 x4, A4 x12, A5 x5, A6 x2, A7 x6, A8 x6, A9, A10 x2)
   PASS every canvas draw function has the signature (ctx, x, y, angleRad, state, opts)
 
 === Test 19: Stopped state readable without colour
-  PASS in greyscale the stopped robot differs from the moving one in 426 pixels; dark pixels 886 vs 678 (thick outline and X mark)
+  PASS in greyscale the stopped robot differs from the moving one in 310 pixels; dark pixels 886 vs 678 (thick outline and X mark)
 
 === Test 20: New screens (4.9 to 4.15)
   PASS evidence: 6 SVG charts, each with a reading and a source tag (Analysis 1; Analysis 2 (technician pair: Analysis 1); Analysis 4; Analysis 3; Analysis 5; Analysis 9)

@@ -283,11 +283,11 @@ async function main() {
       const d = x.getImageData(0, 0, c.width, c.height).data; const bad = {}; let sat = 0, total = 0;
       for (let i = 0; i < d.length; i += 4) { total++; const r = d[i], g = d[i + 1], b = d[i + 2], mx = Math.max(r, g, b), mn = Math.min(r, g, b); if (mx - mn < 28) continue; sat++;
         let h; if (mx === r) h = ((g - b) / (mx - mn)) * 60; else if (mx === g) h = (2 + (b - r) / (mx - mn)) * 60; else h = (4 + (r - g) / (mx - mn)) * 60; if (h < 0) h += 360;
-        const okHue = h <= 12 || h >= 348 || (h >= 26 && h <= 46) || (h >= 105 && h <= 140); if (!okHue) { const k = Math.round(h / 10) * 10; bad[k] = (bad[k] || 0) + 1; } }
+        const okHue = h <= 12 || h >= 348 || (h >= 26 && h <= 46) || (h >= 105 && h <= 140) || (h >= 170 && h <= 265); /* state: red, amber, green; decoration: teal, blue, violet */ if (!okHue) { const k = Math.round(h / 10) * 10; bad[k] = (bad[k] || 0) + 1; } }
       return { sat, total, bad };
     }, b64);
     const badN = Object.values(pal.bad).reduce((a, b) => a + b, 0);
-    ok(badN <= pal.total * 0.0002, `palette: ${pal.sat} coloured pixels; outside red, green, amber hues: ${badN} ${JSON.stringify(pal.bad)}`);
+    ok(badN <= pal.total * 0.0002, `palette: ${pal.sat} coloured pixels; outside the state hues (red, green, amber) and the decoration hues (teal, blue, violet): ${badN} ${JSON.stringify(pal.bad)}`);
     const fnsPage = await p.evaluate(() => Object.keys(Draw).filter(k => /^(draw|svg|html)[A-Z]/.test(k)).sort());
     const SPEC_7A = ['drawRobot', 'drawBatteryBar', 'drawPallet', 'drawLoad', 'drawBox', 'drawCurtain', 'drawPerson', 'drawForklift', 'drawBuilding', 'drawRack', 'drawDockDoor', 'drawGlareBand', 'drawSun', 'drawConveyor', 'drawStaging', 'drawCharger', 'drawServiceBay', 'drawSwapBay', 'drawPack', 'drawPackSlot',
       'drawRouteLine', 'drawSafetyField', 'drawBoundingBox', 'drawSelectionRing', 'drawTooltip', 'drawCameraScene', 'drawBlurDemo', 'svgPipelineBox', 'svgChip', 'svgArrow', 'svgPersonIcon', 'htmlIOPanel', 'htmlGateList',

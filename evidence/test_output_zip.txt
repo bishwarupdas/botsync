@@ -1,29 +1,29 @@
 === Test 16: Zip test
-zip size: 116926 bytes (0.11 MB)
+zip size: 118100 bytes (0.11 MB)
   PASS zip is under 5 MB
-unzipped into a new folder: /tmp/claude-0/-home-user-botsync/14ddc1e3-84a5-55d5-b752-3bb23129f809/scratchpad/fresh_unzip.KQLnpq
+unzipped into a new folder: /tmp/claude-0/-home-user-botsync/14ddc1e3-84a5-55d5-b752-3bb23129f809/scratchpad/fresh_unzip.I7zGLu
 Archive:  botsync_walkthrough.zip
   Length      Date    Time    Name
 ---------  ---------- -----   ----
         0  2026-10-30 09:50   botsync_walkthrough/
         0  2026-10-30 09:50   botsync_walkthrough/assets/
         0  2026-10-30 09:50   botsync_walkthrough/assets/img/
-      524  2026-10-30 09:50   botsync_walkthrough/assets/img/favicon.svg
+      551  2026-10-30 10:58   botsync_walkthrough/assets/img/favicon.svg
         0  2026-10-30 10:25   botsync_walkthrough/assets/css/
-    17560  2026-10-30 10:25   botsync_walkthrough/assets/css/style.css
+    23619  2026-10-30 11:10   botsync_walkthrough/assets/css/style.css
         0  2026-10-30 10:28   botsync_walkthrough/assets/js/
     33957  2026-10-30 10:50   botsync_walkthrough/assets/js/sim.js
-   117761  2026-10-30 10:36   botsync_walkthrough/assets/js/ui.js
+   117806  2026-10-30 11:10   botsync_walkthrough/assets/js/ui.js
     17252  2026-10-30 10:24   botsync_walkthrough/assets/js/game.js
     73407  2026-10-30 10:29   botsync_walkthrough/assets/js/scenarios.js
-    42738  2026-10-30 10:36   botsync_walkthrough/assets/js/draw.js
+    43194  2026-10-30 11:17   botsync_walkthrough/assets/js/draw.js
    108232  2026-10-30 10:08   botsync_walkthrough/assets/js/data.js
     15046  2026-10-30 10:29   botsync_walkthrough/assets/js/voice.js
      9680  2026-10-30 10:33   botsync_walkthrough/assets/js/warehouses.js
      4596  2026-10-30 10:20   botsync_walkthrough/index.html
       215  2026-10-30 09:50   botsync_walkthrough/README.txt
 ---------                     -------
-   440968                     17 files
+   447555                     17 files
 
 === Test 1: Opens clean (fresh unzip)
   PASS console errors/warnings: 0 []

@@ -157,7 +157,7 @@
     fig(m, 'charger (assumed count)', 120, 60, function (ctx) { Draw.drawCharger(ctx, 45, 30, 0, 'free', {}); Draw.drawCharger(ctx, 75, 30, 0, 'occupied', {}); });
     fig(m, 'swap bay', 120, 86, function (ctx) { Draw.drawSwapBay(ctx, 60, 36, 0, 'on', { slots: [{ state: 'charged' }, { state: 'charging', progress: 0.4 }] }); });
     fig(m, 'service bay', 120, 70, function (ctx) { Draw.drawServiceBay(ctx, 60, 26, 0, 'default', {}); });
-    fig(m, 'glare band (C, 14:00-17:00)', 120, 70, function (ctx) { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, 120, 3); Draw.drawGlareBand(ctx, 60, 3, 0, 'on', { len: 40 }); Draw.drawSun(ctx, 88, 12, 0, 'on', {}); });
+    fig(m, 'glare band (C, 14:00-17:00)', 120, 70, function (ctx) { ctx.fillStyle = '#2B2D31'; ctx.fillRect(0, 0, 120, 3); Draw.drawGlareBand(ctx, 60, 3, 0, 'on', { len: 40 }); Draw.drawSun(ctx, 88, 12, 0, 'on', {}); });
     fig(m, 'safety field', 120, 86, function (ctx) { Draw.drawSafetyField(ctx, 40, 44, 0, 'on', { radius: 36 }); Draw.drawPerson(ctx, 78, 42, 0, 'standing', {}); });
     fig(m, 'route line', 120, 60, function (ctx) { Draw.drawRouteLine(ctx, 0, 0, 0, 'on', { points: [[10, 40], [60, 40], [60, 15], [110, 15]] }); });
     $('#lg-chips', el).innerHTML = '<svg viewBox="0 0 260 24" width="260" height="24">' + Draw.svgChip('PASS', 60, 4) + Draw.svgChip('FAIL', 130, 4) + Draw.svgChip('WAITING', 220, 4) + '</svg>' +
@@ -190,9 +190,9 @@
     var s4 = section('A4. Building');
     fig(s4, 'floor and walls', 120, 80, function (ctx) { Draw.drawBuilding(ctx, 5, 5, 0, 'default', { w: 110, h: 70 }); }, 'building:walls');
     fig(s4, 'rack with bay label', 130, 60, function (ctx) { Draw.drawRack(ctx, 10, 18, 0, 'default', { w: 110, h: 26, label: 'Bay 11', labelX: 65 }); }, 'building:rack');
-    fig(s4, 'dock door', 100, 60, function (ctx) { ctx.fillStyle = '#000'; ctx.fillRect(0, 13, 100, 3); Draw.drawDockDoor(ctx, 50, 14.5, 0, 'open', { label: 'Bay 1' }); }, 'building:dock');
-    fig(s4, 'dock door closed', 120, 60, function (ctx) { ctx.fillStyle = '#000'; ctx.fillRect(0, 13, 120, 3); Draw.drawDockDoor(ctx, 60, 14.5, 0, 'closed', { label: 'Bay 1' }); }, 'building:dockClosed');
-    fig(s4, 'glare band and sun', 110, 70, function (ctx) { ctx.fillStyle = '#000'; ctx.fillRect(12, 2, 86, 3); Draw.drawGlareBand(ctx, 45, 5, 0, 'on', { len: 40 }); Draw.drawSun(ctx, 80, 16, 0, 'on', {}); }, 'building:glare');
+    fig(s4, 'dock door', 100, 60, function (ctx) { ctx.fillStyle = '#2B2D31'; ctx.fillRect(0, 13, 100, 3); Draw.drawDockDoor(ctx, 50, 14.5, 0, 'open', { label: 'Bay 1' }); }, 'building:dock');
+    fig(s4, 'dock door closed', 120, 60, function (ctx) { ctx.fillStyle = '#2B2D31'; ctx.fillRect(0, 13, 120, 3); Draw.drawDockDoor(ctx, 60, 14.5, 0, 'closed', { label: 'Bay 1' }); }, 'building:dockClosed');
+    fig(s4, 'glare band and sun', 110, 70, function (ctx) { ctx.fillStyle = '#2B2D31'; ctx.fillRect(12, 2, 86, 3); Draw.drawGlareBand(ctx, 45, 5, 0, 'on', { len: 40 }); Draw.drawSun(ctx, 80, 16, 0, 'on', {}); }, 'building:glare');
     fig(s4, 'conveyor', 100, 60, function (ctx) { Draw.drawConveyor(ctx, 50, 22, 0, 'default', { label: 'Bay 7', labelDy: 22 }); }, 'building:conveyor');
     fig(s4, 'floor staging', 90, 60, function (ctx) { Draw.drawStaging(ctx, 45, 30, 0, 'default', { label: 'Bay 3' }); }, 'building:staging');
     fig(s4, 'charger free', 60, 50, function (ctx) { Draw.drawCharger(ctx, 30, 25, 0, 'free', {}); }, 'building:charger');
@@ -245,7 +245,7 @@
     figHtml(s11, 'slider', '<div class="slider" style="width:240px"><label><span>Swap time</span><span>5 min (default 5)' + tag('assumed') + '</span></label><input type="range" min="3" max="15" value="5" aria-label="sample slider"></div>', 'ui:slider');
     figHtml(s11, 'tags', tag('assumed') + tag('scripted') + tag('simulated'), 'ui:tags');
     figHtml(s11, 'tabs', '<div class="tabs" role="tablist" style="width:260px"><button role="tab" aria-selected="true">Month 1</button><button role="tab" aria-selected="false">Month 2</button></div>', 'ui:tabs');
-    figHtml(s11, 'banner', '<div style="border:1px solid #000;padding:4px 8px;width:420px;text-align:left">' + esc(D.banner) + '</div>', 'ui:banner');
+    figHtml(s11, 'banner', '<div style="border:1px solid #2B2D31;padding:4px 8px;width:420px;text-align:left">' + esc(D.banner) + '</div>', 'ui:banner');
     figHtml(s11, 'log line', '<div class="log-row" style="width:420px;text-align:left"><span class="t">15:42</span><span>Bot 7</span><span class="c">ERR_DOCKING_ALIGNMENT_TIMEOUT</span><span>recovered by agent</span></div>', 'ui:log');
     var s12 = section('A12. Favicon and legend');
     figHtml(s12, 'favicon.svg', '<img src="assets/img/favicon.svg" width="64" height="64" alt="favicon: robot outline">', 'favicon');
@@ -369,7 +369,7 @@
       var hr2 = S.robots[mapState.hover], hd = mapState.disp[hr2.i];
       if (hd) Draw.drawTooltip(ctx, Math.min(hd.x + 26, wh.W - 150 / z), Math.max(4, hd.y - 50), 0, 'on', { lines: [hr2.label, 'state: ' + stateName(hr2), 'battery ' + Math.round(hr2.battery * 100) + '% (simulated)'], zoom: z });
     }
-    if (!Sim.onShift(S, S.t)) { ctx.save(); ctx.globalAlpha = 0.85; ctx.fillStyle = '#fff'; ctx.fillRect(wh.W / 2 - 160, wh.H / 2 - 22, 320, 44); ctx.globalAlpha = 1; ctx.strokeStyle = '#000'; ctx.strokeRect(wh.W / 2 - 160, wh.H / 2 - 22, 320, 44); ctx.restore(); Draw.text(ctx, 'Off shift (' + wh.shift + '): robots parked, not counted', wh.W / 2, wh.H / 2, 14, zo, { bold: true }); }
+    if (!Sim.onShift(S, S.t)) { ctx.save(); ctx.globalAlpha = 0.85; ctx.fillStyle = '#FCFBF8'; ctx.fillRect(wh.W / 2 - 160, wh.H / 2 - 22, 320, 44); ctx.globalAlpha = 1; ctx.strokeStyle = '#2B2D31'; ctx.strokeRect(wh.W / 2 - 160, wh.H / 2 - 22, 320, 44); ctx.restore(); Draw.text(ctx, 'Off shift (' + wh.shift + '): robots parked, not counted', wh.W / 2, wh.H / 2, 14, zo, { bold: true }); }
   }
   function stateName(r) {
     var m = { moving: r.carrying ? 'carrying a pallet' : 'moving', idle: 'idle (waiting for a task)', toCharge: 'driving to a charger', queueCharge: 'waiting for a charger', charging: 'charging',
@@ -917,8 +917,8 @@
       var y = 4 + i * rowH;
       s += '<text x="0" y="' + (y + 11) + '" font-size="12"' + (r.bold ? ' font-weight="bold"' : '') + '>' + esc(r.label) + '</text>';
       r.bars.forEach(function (b, j) {
-        var by = y + j * (bh + gap), w = Math.max(0.5, bw * b.v / max), fill = b.kind === 'hatch' ? 'url(#pat-hatch)' : b.kind === 'light' ? '#EEEEEE' : b.kind === 'red' ? 'url(#pat-redx)' : '#000';
-        s += '<rect x="' + lw + '" y="' + by + '" width="' + w + '" height="' + bh + '" fill="' + fill + '" stroke="#000"/>';
+        var by = y + j * (bh + gap), w = Math.max(0.5, bw * b.v / max), fill = b.kind === 'hatch' ? 'url(#pat-hatch)' : b.kind === 'light' ? '#EEEEEE' : b.kind === 'red' ? 'url(#pat-redx)' : Draw.COLORS.accent;
+        s += '<rect x="' + lw + '" y="' + by + '" width="' + w + '" height="' + bh + '" fill="' + fill + '" stroke="#2B2D31"/>';
         s += '<text x="' + (lw + w + 4) + '" y="' + (by + 10) + '" font-size="12">' + esc(b.text) + '</text>';
       });
     });
@@ -1031,8 +1031,8 @@
      ====================================================================== */
   UI.register('arch', function () {
     function lane(x, title, items) {
-      var s = '<rect x="' + x + '" y="10" width="200" height="470" fill="#EEEEEE" stroke="#000"/><text x="' + (x + 100) + '" y="32" text-anchor="middle" font-size="14" font-weight="bold">' + esc(title) + '</text>';
-      items.forEach(function (it, i) { var y = 46 + i * 46; s += '<rect x="' + (x + 10) + '" y="' + y + '" width="180" height="38" rx="4" fill="#fff" stroke="#000"' + (it.bold ? ' stroke-width="2"' : '') + '/><text x="' + (x + 18) + '" y="' + (y + 16) + '" font-size="12" font-weight="bold">' + esc(it.t) + '</text>' + (it.s ? '<text x="' + (x + 18) + '" y="' + (y + 31) + '" font-size="12">' + esc(it.s) + '</text>' : ''); });
+      var s = '<rect x="' + x + '" y="10" width="200" height="470" fill="#EEEEEE" stroke="#2B2D31"/><text x="' + (x + 100) + '" y="32" text-anchor="middle" font-size="14" font-weight="bold">' + esc(title) + '</text>';
+      items.forEach(function (it, i) { var y = 46 + i * 46; s += '<rect x="' + (x + 10) + '" y="' + y + '" width="180" height="38" rx="4" fill="#FCFBF8" stroke="#2B2D31"' + (it.bold ? ' stroke-width="2"' : '') + '/><text x="' + (x + 18) + '" y="' + (y + 16) + '" font-size="12" font-weight="bold">' + esc(it.t) + '</text>' + (it.s ? '<text x="' + (x + 18) + '" y="' + (y + 31) + '" font-size="12">' + esc(it.s) + '</text>' : ''); });
       return s;
     }
     var svg = '<svg viewBox="0 0 680 540" role="img" aria-label="Where each piece runs: robot, site server, Botsync cloud">' +

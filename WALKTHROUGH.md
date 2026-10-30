@@ -47,3 +47,9 @@ To check calibration on its own, run `selfTest()` in the browser console. It tak
 10. **The voice confirm step** (phrase 2) is the phone's Yes / No card. The full approval screen (4.12) is used by U1, U2, U3, U4, U5, U6, U9, U10 and the generic Recover flow.
 11. **Show sources** tags every number rendered from a value in `data.js`, and simulated values (tag text also defined in `data.js`). Prose taken from the case (roadmap rows, benefits, "what I would not trust") gives its source in brackets instead of a tag per number.
 12. **Scripted limits** in approval edits (for example the 25 to 40% charge-trigger range in U4, or the 20 to 40 minute charge slot in U6) are tagged "scripted example".
+13. **Colour (changed after review).** The spec asks for black on white with colour for state only. At the reviewer's request the page now has a colour layer:
+    - Soft charcoal `#2B2D31` text on warm paper (`#F5F4F0` page, `#FCFBF8` panels), with grey 1 px lines `#7A7D84`.
+    - **Blue** `#1F5FA8` for the top bar, headings, primary and active buttons, moving robots, battery bars and main chart bars.
+    - **Teal** `#12807F` for charging hatches, chargers, conveyors, staging areas, the role chips and "scripted example" tags.
+    - **Violet** `#5B47B0` for "assumed" tags.
+    - **State colours unchanged and reserved:** red is stopped or FAIL, green is recovered or PASS, amber is waiting for a person. None of the decoration colours is close to them in hue, and every non-colour cue (X mark, thick outline, PASS/FAIL words) stays. Test 18's palette check now allows the decoration hues and nothing else.
