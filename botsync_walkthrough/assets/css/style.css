@@ -122,7 +122,7 @@ footer { border-top: 1px solid var(--line); margin: 12px; padding-top: 6px; font
 .counters { display: flex; gap: 12px; flex-wrap: wrap; }
 .counter { border: 1px solid var(--line); padding: 4px 10px; min-width: 130px; }
 .counter .n { font-size: 20px; font-weight: bold; }
-.swap-strip { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 6px; }
+.swap-strip { display: flex; gap: 4px; flex-wrap: nowrap; overflow-x: auto; margin-bottom: 4px; align-items: center; white-space: nowrap; }
 .swap-step { border: 1px solid var(--grey); padding: 3px 6px; font-size: 12px; border-radius: 10px; color: var(--dim); }
 .swap-step.lit { border: 2px solid var(--ink); color: var(--ink); font-weight: bold; }
 
@@ -353,3 +353,26 @@ button.primary:disabled { background: var(--surface); color: var(--grey); border
 .state-stopped, .box h3.state-stopped, .box .state-stopped { color: var(--red) !important; }
 .state-ok, .box .state-ok { color: var(--green) !important; }
 .state-wait, .box .state-wait { color: var(--amber) !important; }
+
+/* ===== Work screen: an app-style layout the height of the window.
+   The left column (map, then the event log) stays in view; the right panel scrolls on its own. ===== */
+.work { height: calc(100vh - var(--tb-h, 100px) - var(--bn-h, 44px) - var(--gb-h, 0px) - 10px); min-height: 420px; align-items: stretch; }
+.map-col, #phone-col, .side { position: static; height: 100%; max-height: none; overflow-y: auto; overscroll-behavior: contain; }
+.map-col { display: flex; flex-direction: column; }
+.map-col .strip { margin-top: 8px; flex: 1 1 0; min-height: 96px; overflow-y: auto; }
+/* on the work screen the page itself does not scroll: no footer, and the work area is the rest of the window */
+body.on-work footer { display: none; }
+body.on-work main { padding-bottom: 0; }
+.strip { flex-wrap: wrap; align-content: flex-start; }
+.strip .counters { order: -1; flex: 1 1 100%; }
+.counter { padding: 2px 8px; min-width: 120px; display: flex; gap: 8px; align-items: baseline; }
+.counter .n { font-size: 18px; }
+@media (max-width: 1180px) {
+  /* the voice layout wraps the panel under the map here, so the columns flow with the page instead */
+  .work.voice { height: auto; }
+  .work.voice .map-col, .work.voice #phone-col, .work.voice .side { height: auto; overflow: visible; }
+}
+@media (max-height: 640px) {
+  .work { height: auto; }
+  .map-col, #phone-col, .side { height: auto; overflow: visible; }
+}

@@ -194,7 +194,7 @@ async function main() {
   test(13, 'Keyboard');
   { const s = await open(DIR, { browser }), p = s.page;
     for (const sc of ['start', 'explore', 'roadmap', 'game']) {
-      await p.evaluate(sc => UI.show(sc), sc); await p.waitForTimeout(300);
+      await p.evaluate(sc => { UI.show(sc); UI.setSpeed(0); }, sc); await p.waitForTimeout(300);   // paused: the robot list is not re-drawn while we walk it
       await p.evaluate(() => document.activeElement && document.activeElement.blur());
       const reached = new Set(); let ring = true;
       for (let k = 0; k < 160; k++) { await p.keyboard.press('Tab'); const info = await p.evaluate(() => { const e = document.activeElement; if (!e || e === document.body) return null; e.dataset.tabseen = '1'; const cs = getComputedStyle(e); return { tag: e.tagName, ring: cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) >= 2 }; }); if (info) { reached.add(1); if (info.tag === 'BUTTON' && !info.ring) ring = false; } }
@@ -216,7 +216,7 @@ async function main() {
   { const s = await open(DIR, { browser, reducedMotion: 'reduce' }), p = s.page;
     ok(await p.evaluate(() => App.reducedMotion), 'page detects prefers-reduced-motion');
     await p.evaluate(() => { UI.show('explore'); UI.setSpeed(4); }); await p.waitForTimeout(2500);
-    const jumps = await p.evaluate(() => { const S = App.live; return S.robots.filter(r => ['moving', 'toCharge', 'toSwapBay'].includes(r.state)).map(r => { const d = UI.mapState.disp[r.i], n = S.wh.nodes[r.node]; return Math.hypot(d.x - n.x, d.y - n.y) < 0.01 && Math.hypot(r.x - n.x, r.y - n.y) >= 0; }); });
+    const jumps = await p.evaluate(() => { const S = App.live; return S.robots.filter(r => ['moving', 'toCharge', 'toSwapBay'].includes(r.state)).map(r => { const d = UI.mapState.disp[r.i], n = S.wh.nodes[r.node]; return Math.hypot(d.x - (d.ox || 0) - n.x, d.y - (d.oy || 0) - n.y) < 0.01;   /* drawn on its node (plus the side-by-side offset when robots share a spot) */ }); });
     ok(jumps.length > 0 && jumps.every(Boolean), `moving robots are drawn on graph nodes (jump between cells): ${jumps.length} checked`);
     const r = await p.evaluate(() => Scenarios.runAuto('U1', 'pass'));
     ok(r.visited.join(',') === 'diagnose,propose,check,execute,log', `pipeline still highlights each step: ${r.visited.join(' -> ')}`);

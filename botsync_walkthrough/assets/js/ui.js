@@ -78,7 +78,9 @@
   UI.show = function (screen, opts) {
     opts = opts || {};
     if (screen === 'explore' || screen === 'game' || screen === 'voice') { App.mode = screen; screen = 'work'; }
+    if (UI.Pipeline) UI.Pipeline.cancelAll();
     App.screen = screen;
+    document.body.classList.toggle('on-work', screen === 'work');
     $$('.screen').forEach(function (s) { s.classList.toggle('active', s.id === 'screen-' + screen); });
     $$('#topbar [data-mode]').forEach(function (b) { b.setAttribute('aria-pressed', String((screen === 'work' && b.dataset.mode === App.mode && !App.guided) || (b.dataset.mode === 'guided' && !!App.guided))); });
     $$('#topbar [data-screen]').forEach(function (b) {
@@ -107,14 +109,21 @@
     $('#role-label').textContent = '· viewing as ' + r.name;
     $$('#roles button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.role === id)); b.classList.toggle('on', b.dataset.role === id); });
     App.emit('role', id);
+    measureTop();
   };
   UI.setShowSources = function (on) {
     App.showSrc = on; document.body.classList.toggle('show-src', on);
     $('#src-switch').setAttribute('aria-pressed', String(on));
   };
+  /* the work screen pins the map under the top bar and banner and gives the side panel exactly the rest of the window */
   function measureTop() {
-    var tb = $('#topbar'); if (tb) document.documentElement.style.setProperty('--tb-h', tb.offsetHeight + 'px');
+    var tb = $('#topbar'), bn = $('#banner'), root = document.documentElement.style;
+    if (tb) root.setProperty('--tb-h', tb.offsetHeight + 'px');
+    if (bn) root.setProperty('--bn-h', (bn.offsetHeight + 12) + 'px');
+    var gb = $('#guide-bar'); root.setProperty('--gb-h', gb && !gb.hidden ? (gb.offsetHeight + 6) + 'px' : '0px');
+    if (App.screen === 'work' && UI.sizeMap) UI.sizeMap();
   }
+  UI.measureTop = measureTop;
 
   /* ---------------- Start screen (4.1) ---------------- */
   UI.register('start', function () {
@@ -348,19 +357,21 @@
       if (o.kind === 'operator') Draw.drawPerson(ctx, o.x, o.y, 0, 'standing', { scale: 1.2 });
     });
     // robots
-    var t = now, seen = {};
+    var t = now, placed = [], MAPSCALE = 0.8, GAP = 30;
     S.robots.forEach(function (r) {
       var d = mapState.disp[r.i] || (mapState.disp[r.i] = { x: r.x, y: r.y, a: r.angle });
       var tx = r.x, ty = r.y;
       if (rm && (r.state === 'moving' || r.state === 'toCharge' || r.state === 'toSwapBay' || r.state === 'toService')) { var nd = wh.nodes[r.node]; tx = nd.x; ty = nd.y; }
-      // robots waiting at the same point are drawn side by side so each stays visible and clickable
-      var key = Math.round(tx / 8) + ',' + Math.round(ty / 8), k = seen[key] = (seen[key] || 0) + 1;
-      if (k > 1) { tx += (k - 1) * 22 * (ty > wh.H / 2 ? 1 : 1); ty += (k % 2 ? -1 : 1) * 10 * (k - 1 > 0 ? 1 : 0); }
+      // robots that would overlap (waiting at a bay, a junction or a charger queue) are drawn side by side, across the aisle direction
+      var bx = tx, by = ty, nx = -Math.sin(r.angle), ny = Math.cos(r.angle), k = 0;
+      while (k < 8 && placed.some(function (q) { return Math.hypot(q[0] - tx, q[1] - ty) < GAP; })) { k++; var step = Math.ceil(k / 2) * (k % 2 ? 1 : -1) * GAP; tx = bx + nx * step; ty = by + ny * step; }
+      tx = Math.max(12, Math.min(wh.W - 12, tx)); ty = Math.max(12, Math.min(wh.H - 12, ty));
+      placed.push([tx, ty]); d.ox = tx - bx; d.oy = ty - by;
       d.x = tx; d.y = ty;
       if (rm) d.a = r.angle; else { var da = Math.atan2(Math.sin(r.angle - d.a), Math.cos(r.angle - d.a)); d.a += da * Math.min(1, (App.frameDt || 33) / CONFIG.turnMs); }
       var st = drawState(r), sel = App.sel && App.sel.type === 'robot' && App.sel.i === r.i;
-      if (r.incident && r.incident.code === 'ERR_SAFETY_LIDAR_ESTOP') Draw.drawSafetyField(ctx, d.x, d.y, d.a, 'on', { radius: 36 });
-      Draw.drawRobot(ctx, d.x, d.y, d.a, st, { label: r.label, battery: r.battery, t: t, reducedMotion: rm, zoom: z, selected: sel, carrying: r.carrying && st !== 'carrying' });
+      if (r.incident && r.incident.code === 'ERR_SAFETY_LIDAR_ESTOP') Draw.drawSafetyField(ctx, d.x, d.y, d.a, 'on', { radius: 30 });
+      Draw.drawRobot(ctx, d.x, d.y, d.a, st, { label: r.label, battery: r.battery, t: t, reducedMotion: rm, zoom: z, selected: sel, carrying: r.carrying && st !== 'carrying', scale: MAPSCALE });
     });
     App.overlays.routes.forEach(function (rt) { Draw.drawRouteLine(ctx, 0, 0, 0, 'on', { points: rt }); });
     App.overlays.labels.forEach(function (l) { Draw.text(ctx, l.text, l.x, l.y, 12, zo, { bold: true }); });
@@ -438,8 +449,8 @@
     var wh = WH.get(App.wh), site = wh.siteRow;
     $('#map-title').innerHTML = 'Warehouse ' + wh.id + ': ' + esc(site.site_id + ' ' + site.site_name) + ' · ' + esc(site.shift_pattern) + ' · ' + N(site.robots_deployed, 'int') + ' robots · ' + wh.stations.length + ' stations';
     $('#map-title').dataset.robots = String(wh.robots); $('#map-title').dataset.stations = String(wh.stations.length);
-    $('#map-note').innerHTML = App.mode === 'game' ? 'time-lapse of the simulated week' : 'demo speed: 1 s on screen = ' + CONFIG.simSecondsPerScreenSecond + ' simulated seconds at 1x; stops far more often than in the data';
-    $('#map-foot').innerHTML = 'Aisle widths drawn to scale (minimum ' + N(site.aisleMin, 'raw', { suffix: ' m' }) + '); lengths are schematic. Chargers: 1 per ' + N(D.assumed.robotsPerCharger, 'int', { noTag: true }) + ' robots ' + tag('assumed') + ' there is no charger inventory in the data.' + (wh.glare ? ' Glare band on Bays 1 to 4 from 14:00 to 17:00 (' + esc(D.planted.glareWindow.text) + ', Planted_patterns tab).' : '');
+    $('#map-note').innerHTML = App.mode === 'game' ? 'time-lapse of the simulated week' : 'demo speed: 1 s = ' + CONFIG.simSecondsPerScreenSecond + ' simulated s at 1x; stops far more often than in the data';
+    $('#map-foot').innerHTML = 'Aisle widths to scale (min ' + N(site.aisleMin, 'raw', { suffix: ' m' }) + '), lengths schematic. Chargers: 1 per ' + N(D.assumed.robotsPerCharger, 'int', { noTag: true }) + ' robots ' + tag('assumed') + ' (no charger inventory in the data).' + (wh.glare ? ' Glare on Bays 1-4, 14:00-17:00 (Planted_patterns tab).' : '');
     $('#strip').hidden = App.mode === 'game';
     $('.work').classList.toggle('voice', App.mode === 'voice'); $('#phone-col').hidden = App.mode !== 'voice';
     sizeMap(); renderStrip();
@@ -448,6 +459,7 @@
 
   function renderSide() {
     if (App.mode !== 'explore' || App.screen !== 'work') return;
+    UI.Pipeline.cancelAll();
     var side = $('#side');
     if (App.sel && App.sel.type === 'scenario') { window.Scenarios.renderPlayer(side, App.sel.id); return; }
     if (App.sel && App.sel.type === 'robot') { renderRobotPanel(side, App.sel.i); return; }
@@ -505,15 +517,19 @@
     }
     if (role === 'it') return '<div class="box"><h3>Site IT</h3><p>Network dropouts ' + N(D.support.networkDropouts, 'int') + ' in the 7-day extract; only ' + N(D.support.dropoutsStoppedRobot, 'int') + ' stopped a robot. Traffic waiting ' + N(D.support.trafficWaitHours, 'f1', { suffix: ' h' }) + ' (7-day extract). WMS handshake incidents at this site in 30 days: ' + N(site.incidentsByCode.ERR_WMS_HANDSHAKE_TIMEOUT || { v: 0, src: SRC.incidents }, 'int') + ' (incidents tab).</p><p class="small">Reading: Wi-Fi and traffic are noise here, not the place to start (Analysis 7).</p></div>';
     if (role === 'tech') return '<div class="box"><h3>Field technician</h3><p>Hardware wear: ' + N(D.levels[2].incidents, 'int') + ' incidents, ' + N(D.levels[2].downtimeH, 'f0', { suffix: ' hours' }) + ' (Analysis 9). Technician response by region (mean minutes):</p><table class="compact"><thead><tr><th>region</th><th class="n">visits</th><th class="n">mean response</th></tr></thead><tbody>' +
-      D.technician.map(function (t) { return '<tr><td>' + t.region + '</td><td class="n">' + N(t.visits, 'int') + '</td><td class="n">' + N(t.meanMin, 'f0', { suffix: ' min' }) + '</td></tr>'; }).join('') + '</tbody></table><div class="btn-row"><button data-scenario="U7">Open the triage list (U7)</button></div></div>';
+      D.technician.map(function (t) { return '<tr><td>' + t.region + '</td><td class="n">' + N(t.visits, 'int') + '</td><td class="n">' + N(t.meanMin, 'f0', { suffix: ' min' }) + '</td></tr>'; }).join('') + '</tbody></table><h4 style="margin-top:8px">Triage list ' + tag('scripted') + '</h4><table class="compact"><thead><tr><th>where</th><th>code</th><th>likely cause</th><th class="n">conf.</th></tr></thead><tbody>' +
+      window.Scenarios.TRIAGE.map(function (t) { return '<tr><td>' + t.wh + ' ' + t.robot + '</td><td class="mono">' + t.code.replace('ERR_', '') + '</td><td>' + esc(t.cause) + '</td><td class="n">' + N(scr(t.conf), 'f2') + '</td></tr>'; }).join('') +
+      '</tbody></table><div class="btn-row"><button data-scenario="U7">Confirm or correct them (U7)</button></div></div>';
     if (role === 'deploy') return '<div class="box"><h3>Site ' + esc(site.site_id) + ' ' + esc(site.site_name) + '</h3><dl class="kv"><dt>Shift</dt><dd>' + esc(site.shift_pattern) + '</dd><dt>Aisle width (min)</dt><dd>' + N(site.aisleMin, 'raw', { suffix: ' m' }) + '</dd><dt>Lighting</dt><dd>' + esc(site.lighting.replace(/_/g, ' ')) + '</dd><dt>Floor</dt><dd>' + esc(site.floor) + '</dd><dt>Wi-Fi score</dt><dd>' + N(site.wifi, 'int') + '</dd><dt>Glare bays</dt><dd>' +
       (site.glareStations.v ? S.wh.stations.filter(function (s) { return s.glare; }).map(function (s) { return s.name; }).join(', ') : 'none') + ' (' + N(site.glareStations, 'int') + ' glare-exposed, stations tab)</dd></dl></div>';
-    if (role === 'product') return '<div class="box"><h3>RICE (top four)</h3><table class="compact"><thead><tr><th>item</th><th class="n">score</th></tr></thead><tbody>' + D.rice.slice(0, 4).map(function (r) { return '<tr' + (r.bold ? ' class="bold"' : '') + '><td>' + esc(r.item) + '</td><td class="n">' + N(r.score, 'raw') + '</td></tr>'; }).join('') + '</tbody></table><p class="small">' + esc(D.followLine) + '</p><div class="btn-row"><button data-screen="roadmap">Open the roadmap and full RICE table</button></div></div>';
+    if (role === 'product') return '<div class="box"><h3>RICE</h3><table class="compact"><thead><tr><th>item</th><th class="n">reach</th><th class="n">impact</th><th class="n">conf.</th><th class="n">effort</th><th class="n">score</th></tr></thead><tbody>' +
+      D.rice.map(function (r) { return '<tr' + (r.bold ? ' class="bold"' : '') + '><td>' + esc(r.item) + '</td><td class="n">' + N(r.reach, 'int') + '</td><td class="n">' + N(r.impact, 'raw', { noTag: true }) + '</td><td class="n">' + N(r.confidence, 'pct0', { noTag: true }) + '</td><td class="n">' + N(r.effort, 'raw', { noTag: true }) + '</td><td class="n">' + N(r.score, 'raw') + '</td></tr>'; }).join('') +
+      '</tbody></table><p class="small">Impact, confidence and effort are the author\'s estimates ' + tag('assumed') + '.</p><h3>Roadmap</h3><ol class="small">' + D.roadmap.map(function (m) { return '<li><strong>' + esc(m.month) + ':</strong> ' + esc(m.swap) + '</li>'; }).join('') + '</ol><p class="small">' + esc(D.followLine) + '</p><div class="btn-row"><button data-screen="roadmap">Open the full roadmap</button></div></div>';
     return '';
   }
   function stoppedList(stopped) {
     if (!stopped.length) return '<p class="small">No robot is stopped right now.</p>';
-    return stopped.map(function (r) { return '<div class="btn-row"><span class="state-stopped">' + esc(r.label) + '</span> <span class="mono small">' + esc(r.incident ? r.incident.code : '') + '</span> <button data-robot="' + r.i + '">Open</button></div>'; }).join('');
+    return stopped.map(function (r) { return '<div class="btn-row"><span class="state-stopped">' + esc(r.label) + '</span> <span class="mono small">' + esc(r.incident ? r.incident.code : '') + '</span> <button class="primary" data-recover-robot="' + r.i + '">Recover</button> <button data-robot="' + r.i + '">Open</button></div>'; }).join('');
   }
   function sliderHtml(key, def, val, label, fmtv) {
     return '<div class="slider"><label for="sl-' + key + '"><span>' + esc(label) + '</span><span><strong id="slv-' + key + '">' + esc(fmtv(val)) + '</strong> (default ' + esc(fmtv(def.v)) + ')' + tag('assumed') + '</span></label>' +
@@ -593,8 +609,7 @@
     var lit = -1, r = S.robots.filter(function (x) { return x.state === 'swapping' || x.state === 'queueSwap' || x.state === 'toSwapBay'; })[0];
     if (r) { if (r.state === 'toSwapBay' || r.state === 'queueSwap') lit = 0; else { var f = 1 - r.timer / S.params.swapTime; lit = f < 0.15 ? 1 : f < 0.5 ? 2 : f < 0.85 ? 3 : 4; } }
     else if (App.recentSwap && performance.now() - App.recentSwap < 1500) lit = 5;
-    var html = '<strong class="small">The swap, step by step:</strong> ' + SWAP_STEPS.map(function (s, i) { return '<span class="swap-step' + (i === lit ? ' lit' : '') + '">' + (i + 1) + '. ' + esc(s) + '</span>'; }).join('') +
-      ' <span class="small">Total time follows the swap-time slider (' + esc(FMT.swapTime(App.params.swapTime)) + ' ' + '). Pack weight is not in the data; engineering has to confirm one operator can handle it.</span>';
+    var html = '<strong class="small">Swap, step by step (' + esc(FMT.swapTime(App.params.swapTime)) + ' in total):</strong> ' + SWAP_STEPS.map(function (s, i) { return '<span class="swap-step' + (i === lit ? ' lit' : '') + '" title="' + esc(s) + '">' + (i + 1) + '. ' + esc(s) + '</span>'; }).join('');
     if (el.innerHTML !== html) el.innerHTML = html;
   }
 
@@ -684,6 +699,7 @@
     var S = App.live, inc = r.incident; if (!inc || App.pipelineRunning) return;
     r.timer = Infinity;   // hold while the pipeline runs
     var spec = window.Scenarios.genericRecover(inc, S, r);
+    spec.onCancel = function () { if (r.incident === inc && r.timer === Infinity && r.state === 'stopped') { r.waitPerson = false; r.timer = inc.holdForUser ? Infinity : inc.down; } };
     var area = $('#pipe-area');
     $('#btn-recover').disabled = true; $('#btn-operator').disabled = true;
     App.pipelineRunning = true;
@@ -746,10 +762,17 @@
   UI.Pipeline = {
     LAYOUTS: LAYOUTS,
     svg: svgPipeline,
+    active: [],
+    /* leaving a panel or screen abandons its pipeline: stop it and give any held robot back its normal clearance timer */
+    cancelAll: function () {
+      UI.Pipeline.active.forEach(function (c) { if (!c.finished) { c.cancelled = true; if (c.onCancel) c.onCancel(); } });
+      UI.Pipeline.active = []; App.pipelineRunning = false;
+    },
     run: function (container, spec) {
-      var ctrl = { visited: [], states: {}, cancelled: false, stepReq: false, decisions: [], transcript: [] };
+      var ctrl = { visited: [], states: {}, cancelled: false, stepReq: false, decisions: [], transcript: [], onCancel: spec.onCancel };
+      UI.Pipeline.active.push(ctrl);
       if (container._pipe) container._pipe.cancelled = true;
-      container._pipe = ctrl;
+      container._pipe = ctrl; container.removeAttribute('data-done'); container.removeAttribute('data-visited');
       var layout = spec.layout || 'fix';
       container.innerHTML = '<div class="pipeline" data-pipeline="' + layout + '"><div class="panel-title"><h3>' + esc(spec.title || 'Pipeline') + ' ' + (spec.scripted !== false ? tag('scripted') : '') + '</h3></div>' +
         '<div class="pipe-controls"><button class="pipe-step">Step</button><span class="small">Pause in the top bar freezes the flow; Step moves one box.</span></div>' +
@@ -816,7 +839,7 @@
         if (ctrl.cancelled) return ctrl;
         var r = typeof spec.result === 'function' ? spec.result(ctrl) : spec.result;
         if (r) { resEl.innerHTML = '<div class="result-box ' + (r.cls || '') + '" data-result="' + esc(r.key || '') + '">' + r.html + '</div>'; }
-        container.setAttribute('data-done', '1');
+        container.setAttribute('data-done', '1'); ctrl.finished = true;
         App.lastPipeline = { visited: ctrl.visited.slice(), result: r ? r.key : '', text: resEl.textContent, decisions: ctrl.decisions.slice(), transcript: ctrl.transcript.join('\n') };
         if (spec.onDone) spec.onDone(ctrl, r);
         return ctrl;
@@ -884,6 +907,7 @@
       var b = e.target.closest('button'); if (!b) return;
       if (b.dataset.robot != null) { App.sel = { type: 'robot', i: +b.dataset.robot }; renderSide(); var h2 = $('#side h2'); if (h2) { h2.tabIndex = -1; h2.focus(); } }
       else if (b.dataset.scenario) { UI.openScenario(b.dataset.scenario); }
+      else if (b.dataset.recoverRobot != null) { var rr = App.live.robots[+b.dataset.recoverRobot]; App.sel = { type: 'robot', i: rr.i }; renderSide(); if (rr.incident) recover(rr); }
       else if (b.dataset.close) { App.sel = null; renderSide(); }
       else if (b.id === 'trigger-stop') { var r = demoStop({ hold: false }); if (r) { App.sel = { type: 'robot', i: r.i }; renderSide(); } }
     });
@@ -1125,11 +1149,11 @@
   function guideBar() {
     var g = App.guided, bar = $('#guide-bar');
     $$('.guide-hl').forEach(function (e) { e.classList.remove('guide-hl'); });
-    if (!g) { bar.hidden = true; bar.innerHTML = ''; return; }
+    if (!g) { bar.hidden = true; bar.innerHTML = ''; measureTop(); return; }
     if (g.paused) {
       bar.hidden = false; bar.innerHTML = '<div class="gtext">Guided story paused at step ' + g.list[g.i] + ' of 14.</div><div class="gbtns"><button id="g-return">Return to the guided story</button><button id="g-end">End</button></div>';
       $('#g-return').onclick = function () { g.paused = false; gotoStep(g.i); }; $('#g-end').onclick = function () { UI.stopGuided(); };
-      return;
+      measureTop(); return;
     }
     var st = STEPS[g.list[g.i] - 1];
     bar.hidden = false;
@@ -1138,6 +1162,7 @@
     $('#g-back').onclick = function () { gotoStep(g.i - 1); };
     $('#g-next').onclick = function () { gotoStep(g.i + 1); };
     $('#g-leave').onclick = function () { g.paused = true; UI.show('explore'); guideBar(); };
+    measureTop();
   }
   function gotoStep(i) {
     var g = App.guided; if (!g) return;
@@ -1182,7 +1207,7 @@
         App.emit('escape');
       }
     });
-    window.addEventListener('resize', measureTop);
+    window.addEventListener('resize', measureTop); window.addEventListener('load', measureTop);
     UI.setRole('ops'); UI.setWarehouse('A'); UI.setSpeed(1);
     App.emit('boot');
     if (location.hash === '#assets') UI.show('assets', { keepHash: true }); else UI.show('start');

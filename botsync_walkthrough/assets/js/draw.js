@@ -76,7 +76,7 @@
     var t = opts.t || 0, rm = !!opts.reducedMotion;
     var carrying = state === 'carrying' || opts.carrying;
     var selected = state === 'selected' || opts.selected;
-    var grey = state === 'idle';
+    var grey = state === 'idle', sc = opts.scale || 1;   // the map draws robots a little smaller than the asset sheet
     var outline = grey ? C.grey : C.accentDark, lw = 1.5, dash = null;
     if (state === 'queue') dash = [4, 3];
     if (state === 'stopped') { outline = C.red; lw = 3; }
@@ -85,7 +85,7 @@
     var alpha = 1;
     if (state === 'stopped' && !rm) alpha = 0.775 + 0.225 * Math.cos(2 * Math.PI * CONFIG.blinkHz * t / 1000);
 
-    ctx.save(); ctx.globalAlpha = alpha; ctx.translate(x, y); ctx.rotate(a || 0);
+    ctx.save(); ctx.globalAlpha = alpha; ctx.translate(x, y); ctx.rotate(a || 0); ctx.scale(sc, sc);
     // forks
     ctx.fillStyle = C.white; ctx.strokeStyle = grey ? C.grey : C.accentDark; ctx.lineWidth = 1;
     [-5.5, 5.5].forEach(function (fy) { ctx.fillRect(15, fy - 1.5, 16, 3); ctx.strokeRect(15, fy - 1.5, 16, 3); });
@@ -118,7 +118,7 @@
     // upright parts: label, chips, battery bar
     ctx.save(); ctx.globalAlpha = alpha;
     var k = 1 / z(opts) * (opts.labelScale || 1);
-    var ly = y - 30;
+    var ly = y - 30 * sc;
     if (opts.label !== false) text(ctx, opts.label || 'Bot', x, ly, 12, opts, { bold: selected, color: grey ? '#616161' : C.black });
     var chip = null;
     if (state === 'toCharge') chip = 'C';
@@ -135,9 +135,9 @@
     if (state === 'waitingForPerson') drawPerson(ctx, x, ly - 15 * k, 0, 'chip', { scale: 0.75 * k, color: C.amber });
     if (state === 'recovered') {
       ctx.strokeStyle = C.green; ctx.lineWidth = 2.5; ctx.beginPath();
-      ctx.moveTo(x + 22, y - 2); ctx.lineTo(x + 26, y + 3); ctx.lineTo(x + 34, y - 8); ctx.stroke();
+      ctx.moveTo(x + 22 * sc, y - 2); ctx.lineTo(x + 26 * sc, y + 3); ctx.lineTo(x + 34 * sc, y - 8); ctx.stroke();
     }
-    if (opts.battery != null) drawBatteryBar(ctx, x, y + 28, 0, state, { battery: opts.battery, t: t, reducedMotion: rm, zoom: opts.zoom });
+    if (opts.battery != null) drawBatteryBar(ctx, x, y + 28 * sc, 0, state, { battery: opts.battery, t: t, reducedMotion: rm, zoom: opts.zoom });
     ctx.restore();
   }
 
@@ -267,14 +267,15 @@
   }
   function drawDockDoor(ctx, x, y, a, state, opts) {
     opts = opts || {};
-    // a 28 px gap in the top wall, sliding-door symbol, label under it
-    ctx.save(); ctx.fillStyle = C.white; ctx.fillRect(x - 14, y - 3, 28, 6);
-    line(ctx, x - 14, y - 4, x - 14, y + 4, C.black, 2); line(ctx, x + 14, y - 4, x + 14, y + 4, C.black, 2);
-    line(ctx, x - 12, y - 1.5, x + 4, y - 1.5, C.black, 1); line(ctx, x - 4, y + 1.5, x + 12, y + 1.5, C.black, 1);
-    ctx.beginPath(); ctx.moveTo(x + 7, y - 1.5); ctx.lineTo(x + 3, y - 4); ctx.lineTo(x + 3, y + 1); ctx.closePath(); ctx.fillStyle = C.black; ctx.fill();
-    if (state === 'closed') { line(ctx, x - 12, y, x + 12, y, C.black, 3); }
+    // a 28 px gap in the wall (any wall: a is the wall direction), sliding-door symbol, label inside the building
+    ctx.save(); ctx.translate(x, y); ctx.rotate(a || 0);
+    ctx.fillStyle = C.white; ctx.fillRect(-14, -3, 28, 6);
+    line(ctx, -14, -4, -14, 4, C.black, 2); line(ctx, 14, -4, 14, 4, C.black, 2);
+    line(ctx, -12, -1.5, 4, -1.5, C.black, 1); line(ctx, -4, 1.5, 12, 1.5, C.black, 1);
+    ctx.beginPath(); ctx.moveTo(7, -1.5); ctx.lineTo(3, -4); ctx.lineTo(3, 1); ctx.closePath(); ctx.fillStyle = C.black; ctx.fill();
+    if (state === 'closed') { line(ctx, -12, 0, 12, 0, C.black, 3); }
     ctx.restore();
-    if (opts.label) text(ctx, opts.label + (state === 'closed' ? ' (closed)' : ''), x, y + 13, 12, opts, { bold: true });
+    if (opts.label) text(ctx, opts.label + (state === 'closed' ? ' (closed)' : ''), x + (opts.labelDx || 0), y + (opts.labelDy != null ? opts.labelDy : 13), 12, opts, { bold: true, align: opts.labelAlign || 'center' });
   }
   function drawSun(ctx, x, y, a, state, opts) {
     ctx.save(); ctx.strokeStyle = C.black; ctx.lineWidth = 1; ctx.fillStyle = C.white;

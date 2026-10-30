@@ -2,7 +2,7 @@
 const path = require('path'), fs = require('fs');
 const { open } = require('./pw');
 const DIR = process.argv[2] || 'botsync_walkthrough', OUT = process.argv[3] || 'evidence';
-const expand = p => p.addStyleTag({ content: '.side{max-height:none!important;position:static!important;overflow:visible!important} #topbar,#banner{position:static!important}' });
+const expand = p => p.addStyleTag({ content: '.work{height:auto!important} .map-col,.side,#phone-col{height:auto!important;max-height:none!important;position:static!important;overflow:visible!important} #topbar,#banner{position:static!important}' });
 (async () => {
   const s = await open(DIR, { wait: 800 }), p = s.page; await expand(p);
   await p.evaluate(() => UI.show('explore'));

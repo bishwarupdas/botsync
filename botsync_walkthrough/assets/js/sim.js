@@ -9,7 +9,7 @@
   /* Calibration knobs (8.5 allows only these two): the mission duty (site work arrival rate, missions per minute) and the charge trigger, per site.
      Tuned with tools/calibrate.js so the Today baseline matches 5.7 within the tolerance. */
   var CAL = {
-    A: { demand: 1.15, chargeTrigger: 0.36, triggerSpread: 0 },
+    A: { demand: 1.3979, chargeTrigger: 0.36, triggerSpread: 0 },
     B: { demand: 2.3274, chargeTrigger: 0.25, triggerSpread: 0.05 },
     C: { demand: 2.6923, chargeTrigger: 0.25, triggerSpread: 0 }
   };
@@ -18,6 +18,7 @@
   var DRAIN_PER_MIN = 1 / (A.runTimeH.v * 60);
   var CHARGE_MIN = A.chargeTimeMin.v;
   var DEADLOCK_WAIT_MIN = 1;      // 60 simulated seconds (8.1d)
+  var FOLLOW_GAP_PX = 40;         // a robot keeps one robot-length behind the one ahead on the same segment (Explore)
   var LEVEL = D.codeLevel;
 
   function hashSeed() { var h = 2166136261 >>> 0; for (var i = 0; i < arguments.length; i++) { h ^= (arguments[i] + 0x9e3779b9 + (h << 6) + (h >>> 2)) >>> 0; h = Math.imul(h, 16777619) >>> 0; } return h >>> 0; }
@@ -144,9 +145,9 @@
     return m >= sh.start && m < sh.end;
   }
 
-  /* 8.1d traffic (Explore only): each aisle segment (edge between two waypoints) takes robots in one direction at a time.
-     A robot waiting at a waypoint holds nothing. A segment with a robot waiting to enter from the other side takes no new
-     robots in the current direction, so nobody waits for ever. A wait over 60 simulated seconds raises a stop. */
+  /* 8.1d traffic (Explore only): each aisle segment (edge between two waypoints) holds one robot at a time.
+     A robot waiting at a waypoint holds nothing; the first robot to wait for a segment is next in, so nobody waits for ever.
+     A wait over 60 simulated seconds raises a stop. */
   function buildCorridors(S) {
     var wh = S.wh, cor = {};
     wh.adj.forEach(function (list, a) { list.forEach(function (e) { var k = wh.edgeKey(a, e.to); if (!cor[k]) cor[k] = { c: { id: k, users: [], dir: 0, reserve: 0 }, fwd: a < e.to ? [a, e.to] : [e.to, a] }; }); });
@@ -249,8 +250,10 @@
     var cd = corridorDir(S, a, b), c = cd.c;
     if (r.corridor === c) return true;
     if (c.reserve && (c.reserveBy == null || S.robots[c.reserveBy].waitingFor !== c)) { c.reserve = 0; c.reserveBy = null; }   // stale: that robot is no longer waiting here
-    var blocked = (c.users.length && c.dir !== cd.dir) || (c.reserve && c.reserve !== cd.dir && c.reserveBy !== r.i);
-    if (blocked) { if (!c.reserve && c.users.length) { c.reserve = cd.dir; c.reserveBy = r.i; } return false; }
+    // head-on robots queue; robots going the same way follow one robot-length apart, so they never drive onto each other
+    var last = c.users.length ? S.robots[c.users[c.users.length - 1]] : null;
+    var blocked = (c.users.length && c.dir !== cd.dir) || (c.reserve && c.reserve !== cd.dir && c.reserveBy !== r.i) || (last && last.pos < FOLLOW_GAP_PX);
+    if (blocked) { if (!c.reserve && c.users.length && c.dir !== cd.dir) { c.reserve = cd.dir; c.reserveBy = r.i; } return false; }
     if (r.corridor) leaveCorridor(S, r);
     if (c.reserveBy === r.i) { c.reserve = 0; c.reserveBy = null; }
     c.users.push(r.i); c.dir = cd.dir; r.corridor = c; return true;
@@ -270,6 +273,15 @@
       r.waitingFor = null; r.wait = 0; r.triedReplan = false;
       var na = wh.nodes[a], nb = wh.nodes[b], len = Math.max(0.01, Math.hypot(nb.x - na.x, nb.y - na.y));
       var can = (dt - used) * DRIVE_PX_PER_MIN, left = len - r.pos;
+      if (r.corridor) {   // following: stop one robot-length behind the robot ahead on this segment
+        var qi = r.corridor.users.indexOf(r.i), ahead = qi > 0 ? S.robots[r.corridor.users[qi - 1]] : null;
+        if (ahead && ahead.corridor === r.corridor) {
+          var room = ahead.pos - FOLLOW_GAP_PX - r.pos;
+          if (room <= 0.01) { var ww = dt - used; r.wait += ww * 0.25; S.m.waitMin += ww; return dt; }
+          can = Math.min(can, room);
+          if (can < left) { r.pos += can; var tu = can / DRIVE_PX_PER_MIN; used += tu; r.x = na.x + (nb.x - na.x) * r.pos / len; r.y = na.y + (nb.y - na.y) * r.pos / len; if (can >= room - 0.01) { var w2 = dt - used; S.m.waitMin += w2; return dt; } continue; }
+        }
+      }
       r.angle = Math.atan2(nb.y - na.y, nb.x - na.x);
       if (can >= left) { used += left / DRIVE_PX_PER_MIN; r.seg++; r.pos = 0; r.node = b; r.x = nb.x; r.y = nb.y; if (r.corridor) leaveCorridor(S, r); }
       else { r.pos += can; used = dt; r.x = na.x + (nb.x - na.x) * r.pos / len; r.y = na.y + (nb.y - na.y) * r.pos / len; }

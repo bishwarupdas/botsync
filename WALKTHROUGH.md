@@ -53,3 +53,11 @@ To check calibration on its own, run `selfTest()` in the browser console. It tak
     - **Teal** `#12807F` for charging hatches, chargers, conveyors, staging areas, the role chips and "scripted example" tags.
     - **Violet** `#5B47B0` for "assumed" tags.
     - **State colours unchanged and reserved:** red is stopped or FAIL, green is recovered or PASS, amber is waiting for a person. None of the decoration colours is close to them in hue, and every non-colour cue (X mark, thick outline, PASS/FAIL words) stays. Test 18's palette check now allows the decoration hues and nothing else.
+14. **Three different floor plans (changed after review).** One generator builds all three maps; each site gets its own plan, and bay numbers, counts and aisle widths follow section 7 exactly.
+    - **A (S08, brownfield, 2.4 m aisles):** turned 90 degrees, dock doors on the left wall, conveyors along the top, and a dense grid of short rack columns.
+    - **B (S12, greenfield, 3.5 m aisles):** dock doors on the bottom wall, facing a large open staging floor, with three long rack bays.
+    - **C (S20):** the classic layout, with glare-exposed doors along the top.
+    - Rotating or flipping a plan keeps every distance. Because A's travel distances changed, its work arrival rate was re-tuned (1.15 to 1.40 missions a minute) and calibration rechecked (test 11).
+15. **Traffic in Explore (8.1d).** Robots heading the same way may share an aisle segment but keep one robot-length apart; robots coming head-on wait at the waypoint. A robot that has started waiting is let in next, so nobody waits for ever. A wait over 60 simulated seconds raises ERR_PATH_PLANNING_DEADLOCK, or ERR_INTERSECTION_GRIDLOCK_TIMEOUT when the robot it waits for is itself waiting. Robots that share a spot (a bay, a junction, a charger queue) are drawn side by side.
+16. **Robot size on the map.** Robots are drawn at 80% of the asset size on the map, so they fit a 2.4 m aisle. The assets gallery and legend keep the spec size (A1).
+17. **Work-screen layout.** Explore, Game and Voice fill the window height. The map with the event log under it stays in view, and the right panel scrolls on its own. Below 1180 px wide the voice screen and very short windows fall back to normal page scrolling.

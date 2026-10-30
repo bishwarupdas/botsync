@@ -283,31 +283,31 @@
   T22: ALL PASS
 
 === Test 11: Simulation calibration (8.5) and determinism
-  PASS A moving 63.9% vs 66.0% (±3 pts)
-  PASS A charging 22.7% vs 23.5% (±3 pts)
-  PASS A emergency low-battery stops 42.5 vs 37 (±25%)
-  PASS A incidents 67.2 vs 63 (±20%)
-  PASS B moving 55.3% vs 54.9% (±3 pts)
-  PASS B charging 11.7% vs 11.8% (±3 pts)
+  PASS A moving 66.7% vs 66.0% (±3 pts)
+  PASS A charging 23.3% vs 23.5% (±3 pts)
+  PASS A emergency low-battery stops 43.7 vs 37 (±25%)
+  PASS A incidents 68.4 vs 63 (±20%)
+  PASS B moving 55.1% vs 54.9% (±3 pts)
+  PASS B charging 11.5% vs 11.8% (±3 pts)
   PASS B emergency low-battery stops 3.6 vs 6 (±3)
   PASS B incidents 27.8 vs 32 (±20%)
-  PASS C moving 63.3% vs 63.4% (±3 pts)
-  PASS C charging 12.3% vs 11.6% (±3 pts)
-  PASS C emergency low-battery stops 1.5 vs 3 (±3)
+  PASS C moving 63.4% vs 63.4% (±3 pts)
+  PASS C charging 12.4% vs 11.6% (±3 pts)
+  PASS C emergency low-battery stops 1.6 vs 3 (±3)
   PASS C incidents 55.9 vs 59 (±20%)
-  selfTest(): 20 seeds x 30 days x 3 warehouses in 49.3 s
-  PASS same seed twice gives byte-identical results (6706 bytes)
+  selfTest(): 20 seeds x 30 days x 3 warehouses in 50.3 s
+  PASS same seed twice gives byte-identical results (6723 bytes)
   PASS a different seed gives a different result
 
 === Test 12: Game sanity (10.8)
   PASS spare packs at 0: swap gives exactly no benefit over Today (5 seeds)
-  PASS 0.3 spare packs per robot on A: 156.8 h returned, 304 extra moves per week (10-seed mean)
-  PASS swap helps A most per robot: A 19.6 h/robot, B 10.2, C 8.1
-  PASS recovery agent helps C most, B least (downtime hours saved per week: A 0.53, B 0.34, C 1.27)
+  PASS 0.3 spare packs per robot on A: 158.7 h returned, 316 extra moves per week (10-seed mean)
+  PASS swap helps A most per robot: A 19.8 h/robot, B 10.2, C 8.0
+  PASS recovery agent helps C most, B least (downtime hours saved per week: A 0.53, B 0.34, C 1.24)
   PASS triage changes no robot time (returned 0, extra 0)
-  PASS swap time 15 min reduces the benefit: 136.2 h vs 156.8 h at 5 min
-  PASS headroom 0%: extra moves 0, time returned 168.7 h
-  PASS B shows a smaller gain in moves than A (per robot: A 37.9, B 18.6)
+  PASS swap time 15 min reduces the benefit: 136.0 h vs 158.7 h at 5 min
+  PASS headroom 0%: extra moves 0, time returned 166.9 h
+  PASS B shows a smaller gain in moves than A (per robot: A 39.4, B 18.5)
 
 === Test 13: Keyboard
   PASS start: every visible button reachable with Tab (0 not reached [])
@@ -369,9 +369,9 @@
   PASS 1024x768 arch: text >= 14 px (12 px only for labels, tags, chips): 0 smaller []
 
 === Test 17: Speed
-  PASS a week at 16x ran in 1.99 s (< 3 s)
-  PASS 20-run average finished in 4.6 s (< 60 s)
-  PASS page stayed responsive: longest gap between heartbeats 602 ms
+  PASS a week at 16x ran in 2.06 s (< 3 s)
+  PASS 20-run average finished in 4.7 s (< 60 s)
+  PASS page stayed responsive: longest gap between heartbeats 570 ms
 
 === Test 18: Assets gallery
   PASS 88 required assets present in the gallery (93 figures); missing: none
@@ -419,13 +419,13 @@
   PASS src values in data.js: Analysis 1 | Analysis 2 | Analysis 9 | Analysis 4 | Analysis 10 | Analysis 5 | sites and incidents tabs | Analysis 3 | Analysis 6 | Analysis 7 | Planted_patterns tab | Analysis 8 | assumed | sites tab | incidents tab | charge_sessions tab | eval_results tab (scripted scenario, not measured) | scripted example | change_requests tab (scripted scenario, not measured) | assumed (author estimate) | derived from the values next to it | battery_packs tab | robots tab | robot_daily_utilization tab | stations tab | error_codes tab | Analysis 11 | Analysis 12 | ai_flow_steps tab | simulated
 
 === Test 21: Demand honesty (8.1b)
-  PASS A, headroom 0%, {"swap":true}: extra pallet moves 0 on all 5 seeds; robot time returned at least 156.3 h
+  PASS A, headroom 0%, {"swap":true}: extra pallet moves 0 on all 5 seeds; robot time returned at least 159.5 h
   PASS time returned is above 0 for the swap policy at 0% headroom
   PASS A, headroom 0%, {"agent":true}: extra pallet moves 0 on all 5 seeds
   PASS A, headroom 0%, {"triage":true}: extra pallet moves 0 on all 5 seeds
-  PASS A, headroom 0%, {"swap":true,"agent":true,"triage":true}: extra pallet moves 0 on all 5 seeds; robot time returned at least 159.3 h
+  PASS A, headroom 0%, {"swap":true,"agent":true,"triage":true}: extra pallet moves 0 on all 5 seeds; robot time returned at least 159.6 h
   PASS time returned is above 0 for the swap policy at 0% headroom
-  PASS A, headroom 25%, swap: extra moves positive on all 10 seeds (min 286), never above 25% of today's volume (max 16.4%)
+  PASS A, headroom 25%, swap: extra moves positive on all 10 seeds (min 305), never above 25% of today's volume (max 16.6%)
 
 === Test 23: Shift hours (8.1c)
   PASS A: a simulated week has 168.00 scheduled hours per robot (expected 168)

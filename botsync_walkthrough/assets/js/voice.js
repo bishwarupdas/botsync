@@ -84,8 +84,10 @@
   }
   function refuseSteps(bot, steps, rows) {
     steps.push({ box: 'check', status: 'FAIL', 'in': 'intent: release e-stop', out: 'FAIL: safety layer. The safety layer never takes input from a model or a phone.', gates: rows, gatesTitle: 'Deterministic check' },
-      { box: 'person', status: 'FAIL', 'in': 'refused', out: 'only a person at the robot can confirm the area is clear and reset it' },
-      { box: 'reply', status: 'INFO', 'in': 'refused', out: 'I can\'t do that. Someone has to be at the robot and confirm the area is clear.', onEnter: function () { reply('I can\'t do that. Someone has to be at the robot and confirm the area is clear.'); } });
+      { box: 'person', status: 'WAITING', 'in': 'refused', out: 'only a person at the robot can confirm the area is clear and reset it',
+        approval: { key: 'voice-safety', failed: 'Releasing an e-stop reaches the safety layer, which never takes input from a model or a phone.', rule: 'safety_layer_untouched', why: 'Only a person at the robot can confirm the area is clear. No software path exists.',
+          proposal: 'release_estop(' + (bot ? bot.label : '?') + ')', offending: 'release_estop', alternative: 'None in software. Send a person to the robot to check the area and reset it.', noAlternative: true, rejectLabel: 'Close: refused' },
+        branch: { reject: [{ box: 'reply', status: 'INFO', 'in': 'refused', out: 'I can\'t do that. Someone has to be at the robot and confirm the area is clear.', onEnter: function () { reply('I can\'t do that. Someone has to be at the robot and confirm the area is clear.'); } }] } });
     return { steps: steps, result: { key: 'V-refused', cls: 'refused', html: '<strong class="state-stopped" data-outcome="refused">Refused.</strong> Matches U9: the safety layer is outside every software level. Nothing changed on the robot.' } };
   }
 
@@ -147,7 +149,7 @@
   /* for the acceptance tests: say a phrase and answer any confirm automatically */
   function runAuto(i, answer) {
     setup(); render();
-    var poll = setInterval(function () { if (V.pending) { var f = V.pending, a = answer || 'yes'; V.pending = null; V.confirm = null; V.messages.push({ who: 'user', text: a === 'yes' ? 'Yes' : 'No', caption: 'tap' }); refreshPhone(); f(a); } }, 80);
+    var poll = setInterval(function () { var rj = document.querySelector('#v-pipe .approval #ap-reject:not([disabled])'); if (rj) rj.click(); if (V.pending) { var f = V.pending, a = answer || 'yes'; V.pending = null; V.confirm = null; V.messages.push({ who: 'user', text: a === 'yes' ? 'Yes' : 'No', caption: 'tap' }); refreshPhone(); f(a); } }, 80);
     return say(i).then(function (r) { clearInterval(poll); return { key: r.result, text: document.getElementById('v-pipe').textContent, phone: V.messages.map(function (m) { return m.text; }), visited: r.visited }; });
   }
 

@@ -69,8 +69,8 @@
     G.running = false; G.last = G.stepper.result(); G.last.ms = performance.now() - G.t0; G.last.wh = App.wh; G.last.switches = JSON.parse(JSON.stringify(G.policy)); G.last.params = JSON.parse(JSON.stringify(G.params));
     window.App.lastGame = { ms: G.last.ms, returned: G.last.robotHoursReturned, extra: G.last.extraPalletMoves, todayVolume: G.last.todayVolume, headroom: G.last.headroom, wh: App.wh, policy: G.last.switches };
     var pr = document.getElementById('g-prog'); if (pr) pr.style.width = '100%';
-    document.getElementById('g-skip').disabled = true; document.getElementById('g-run').disabled = false;
-    document.getElementById('g-out').innerHTML = scoreboard(G.last);
+    var sk = document.getElementById('g-skip'), rn = document.getElementById('g-run'), out = document.getElementById('g-out');
+    if (sk) sk.disabled = true; if (rn) rn.disabled = false; if (out) out.innerHTML = scoreboard(G.last);
   }
 
   function row(label, a, b, f, diffF, opt) {
@@ -123,7 +123,7 @@
       else {
         G.avg = { list: acc, wh: App.wh, ms: performance.now() - t0, policy: JSON.parse(JSON.stringify(G.policy)) }; btn.disabled = false;
         window.App.lastAvg = { ms: G.avg.ms, n: acc.length };
-        var out = document.getElementById('g-out'); out.innerHTML = (G.last ? scoreboard(G.last) : '') + avgTable(G.avg);
+        var out = document.getElementById('g-out'); if (out) out.innerHTML = (G.last ? scoreboard(G.last) : '') + avgTable(G.avg);   // the reader may have left the Game screen
       }
     })();
   }

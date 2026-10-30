@@ -1,0 +1,324 @@
+PASS start screen renders
+PASS Start: "explore" button opens explore
+PASS Start: "game" button opens game
+PASS Start: Quick tour link starts the tour
+PASS Start: Guided button starts guided mode
+PASS top bar "start" button opens its screen
+PASS start screen renders cleanly
+PASS top bar "evidence" button opens its screen
+PASS evidence screen renders cleanly
+PASS top bar "fleet" button opens its screen
+PASS fleet screen renders cleanly
+PASS top bar "how" button opens its screen
+PASS how screen renders cleanly
+PASS top bar "arch" button opens its screen
+PASS arch screen renders cleanly
+PASS top bar "roadmap" button opens its screen
+PASS roadmap screen renders cleanly
+PASS top bar "voice" button opens its screen
+PASS voice screen renders cleanly
+PASS mode switch explore
+PASS explore via mode switch
+PASS mode switch game
+PASS game via mode switch
+PASS mode switch Guided starts guided mode
+PASS speed button Pause
+PASS speed button 1x
+PASS speed button 4x
+PASS speed button 16x
+PASS Legend opens with robot states and map symbols
+PASS Legend closes
+PASS Show sources on
+PASS Show sources off
+PASS Explore A: robot panel opens for all 8 robots
+PASS Explore A: View as ops panel
+PASS Explore A: View as floor panel
+PASS Explore A: View as it panel
+PASS Explore A: View as tech panel
+PASS Explore A: View as deploy panel
+PASS Explore A: View as product panel
+PASS Explore A: roles
+PASS Explore B: robot panel opens for all 17 robots
+PASS Explore B: View as ops panel
+PASS Explore B: View as floor panel
+PASS Explore B: View as it panel
+PASS Explore B: View as tech panel
+PASS Explore B: View as deploy panel
+PASS Explore B: View as product panel
+PASS Explore B: roles
+PASS Explore C: robot panel opens for all 16 robots
+PASS Explore C: View as ops panel
+PASS Explore C: View as floor panel
+PASS Explore C: View as it panel
+PASS Explore C: View as tech panel
+PASS Explore C: View as deploy panel
+PASS Explore C: View as product panel
+PASS Explore C: roles
+PASS A ERR_BATTERY_LOW_CRITICAL: Why + Recover pipeline ends (person; boxes diagnose>propose>check>person>execute>log)
+PASS A ERR_DOCKING_ALIGNMENT_TIMEOUT: Why + Recover pipeline ends (recovered; boxes diagnose>propose>check>execute>log)
+PASS A ERR_PALLET_POCKET_NOT_DETECTED: Why + Recover pipeline ends (recovered; boxes diagnose>propose>check>execute>log)
+PASS A ERR_PATH_PLANNING_DEADLOCK: Why + Recover pipeline ends (recovered; boxes diagnose>propose>check>execute>log)
+PASS A ERR_OBSTACLE_PERSISTENT_BLOCK: Why + Recover pipeline ends (recovered; boxes diagnose>propose>check>execute>log)
+PASS A ERR_WMS_HANDSHAKE_TIMEOUT: Why + Recover pipeline ends (recovered; boxes diagnose>propose>check>execute>log)
+PASS A ERR_LIDAR_DIRT_OBSCURATION: Why + Recover pipeline ends (recovered; boxes diagnose>propose>check>execute>log)
+PASS A ERR_INTERSECTION_GRIDLOCK_TIMEOUT: Why + Recover pipeline ends (recovered; boxes diagnose>propose>check>execute>log)
+PASS A ERR_FORK_LIMIT_SWITCH_FAULT: Why + Recover pipeline ends (person; boxes diagnose>propose>check>person>execute>log)
+PASS A: all 9 codes recover cleanly
+PASS B ERR_DOCKING_ALIGNMENT_TIMEOUT: Why + Recover pipeline ends (recovered; boxes diagnose>propose>check>execute>log)
+PASS B ERR_BATTERY_LOW_CRITICAL: Why + Recover pipeline ends (person; boxes diagnose>propose>check>person>execute>log)
+PASS B ERR_FORK_LIMIT_SWITCH_FAULT: Why + Recover pipeline ends (person; boxes diagnose>propose>check>person>execute>log)
+PASS B ERR_SAFETY_LIDAR_ESTOP: Why + Recover pipeline ends (refused; boxes diagnose>propose>check>person>log)
+PASS B ERR_PALLET_POCKET_NOT_DETECTED: Why + Recover pipeline ends (recovered; boxes diagnose>propose>check>execute>log)
+PASS B ERR_WMS_HANDSHAKE_TIMEOUT: Why + Recover pipeline ends (recovered; boxes diagnose>propose>check>execute>log)
+PASS B ERR_OBSTACLE_PERSISTENT_BLOCK: Why + Recover pipeline ends (recovered; boxes diagnose>propose>check>execute>log)
+PASS B ERR_LIDAR_DIRT_OBSCURATION: Why + Recover pipeline ends (recovered; boxes diagnose>propose>check>execute>log)
+PASS B ERR_INTERSECTION_GRIDLOCK_TIMEOUT: Why + Recover pipeline ends (recovered; boxes diagnose>propose>check>execute>log)
+PASS B ERR_LOCALIZATION_LOST: Why + Recover pipeline ends (recovered; boxes diagnose>propose>check>execute>log)
+PASS B ERR_CHARGER_CONTACT_FAULT: Why + Recover pipeline ends (person; boxes diagnose>propose>check>person>execute>log)
+PASS B: all 11 codes recover cleanly
+PASS C ERR_DOCKING_ALIGNMENT_TIMEOUT: Why + Recover pipeline ends (recovered; boxes diagnose>propose>check>execute>log)
+PASS C ERR_LIDAR_DIRT_OBSCURATION: Why + Recover pipeline ends (recovered; boxes diagnose>propose>check>execute>log)
+PASS C ERR_LOCALIZATION_LOST: Why + Recover pipeline ends (recovered; boxes diagnose>propose>check>execute>log)
+PASS C ERR_PALLET_POCKET_NOT_DETECTED: Why + Recover pipeline ends (recovered; boxes diagnose>propose>check>execute>log)
+PASS C ERR_OBSTACLE_PERSISTENT_BLOCK: Why + Recover pipeline ends (recovered; boxes diagnose>propose>check>execute>log)
+PASS C ERR_LIFT_MOTOR_OVERCURRENT: Why + Recover pipeline ends (person; boxes diagnose>propose>check>person>execute>log)
+PASS C ERR_BATTERY_LOW_CRITICAL: Why + Recover pipeline ends (person; boxes diagnose>propose>check>person>execute>log)
+PASS C ERR_WMS_HANDSHAKE_TIMEOUT: Why + Recover pipeline ends (recovered; boxes diagnose>propose>check>execute>log)
+PASS C ERR_FORK_LIMIT_SWITCH_FAULT: Why + Recover pipeline ends (person; boxes diagnose>propose>check>person>execute>log)
+PASS C ERR_SAFETY_LIDAR_ESTOP: Why + Recover pipeline ends (refused; boxes diagnose>propose>check>person>log)
+PASS C ERR_IO_DEVICE_MISMATCH: Why + Recover pipeline ends (person; boxes diagnose>propose>check>person>execute>log)
+PASS C: all 11 codes recover cleanly
+PASS Call operator: robot waits (amber), operator walks up, robot clears
+PASS Call operator
+PASS Explore: swap policy switch on, readout shown
+PASS Explore: swap sliders change packs, swap time and operators
+PASS Explore: swap running at 16x
+PASS Explore: recovery agent switch on
+PASS Explore: agent running
+PASS U1: variant button "pass" selects it
+PASS U1 [pass]: U1-pass
+PASS U1 pass clean
+PASS U1: Replay resets the scenario
+PASS U1: variant button "fail" selects it
+PASS U1 [fail] "approve": U1-fail-approved | approval: Result: applied (0.3 m/s). Label stored for the evaluation s
+PASS U1 fail clean
+PASS U1: Replay resets the scenario
+PASS U1: variant button "fail" selects it
+PASS U1 [fail] "reject": U1-fail-operator | approval: Result: blocked. Label stored for the evaluation set.
+PASS U1 fail clean
+PASS U1: Replay resets the scenario
+PASS U1: variant button "fail" selects it
+PASS U1 [fail] {"edit":0.2}: U1-fail-approved | approval: Result: applied after edit (0.2 m/s). Label stored for the e
+PASS U1 fail clean
+PASS U1: Replay resets the scenario
+PASS U2: variant button "box" selects it
+PASS U2 [box]: U2-box
+PASS U2 box clean
+PASS U2: Replay resets the scenario
+PASS U2: variant button "spill" selects it
+PASS U2 [spill] "approve": U2-spill | approval: Result: applied. Label stored for the evaluation set.
+PASS U2 spill clean
+PASS U2: Replay resets the scenario
+PASS U2: variant button "spill" selects it
+PASS U2 [spill] "reject": U2-spill-blocked | approval: Result: blocked. Label stored for the evaluation set.
+PASS U2 spill clean
+PASS U2: Replay resets the scenario
+PASS U2: variant button "curtain" selects it
+PASS U2 [curtain]: U2-curtain
+PASS U2 curtain clean
+PASS U2: Replay resets the scenario
+PASS U3 "approve": U3-done | approval: Result: applied (dirty_sensor). Label stored for the evaluat
+PASS U3  clean
+PASS U3: Replay resets the scenario
+PASS U3 {"edit":1}: U3-done | approval: Result: applied after edit (glare). Label stored for the eva
+PASS U3  clean
+PASS U3: Replay resets the scenario
+PASS U3 "reject": U3-blocked | approval: Result: blocked. Label stored for the evaluation set.
+PASS U3  clean
+PASS U3: Replay resets the scenario
+PASS U4: variant button "pass" selects it
+PASS U4 [pass]: U4-pass
+PASS U4 pass clean
+PASS U4: Replay resets the scenario
+PASS U4: variant button "g1" selects it
+PASS U4 [g1] "approve": U4-g1 | approval: Result: applied (30 %). Label stored for the evaluation set.
+PASS U4 g1 clean
+PASS U4: Replay resets the scenario
+PASS U4: variant button "g1" selects it
+PASS U4 [g1] {"edit":35}: U4-g1 | approval: Result: applied after edit (35 %). Label stored for the eval
+PASS U4 g1 clean
+PASS U4: Replay resets the scenario
+PASS U4: variant button "g1" selects it
+PASS U4 [g1] "reject": U4-g1 | approval: Result: blocked. Label stored for the evaluation set.
+PASS U4 g1 clean
+PASS U4: Replay resets the scenario
+PASS U4: variant button "g2" selects it
+PASS U4 [g2] "reject": U4-g2 | approval: Result: blocked. Label stored for the evaluation set.
+PASS U4 g2 clean
+PASS U4: Replay resets the scenario
+PASS U4: variant button "g2" selects it
+PASS U4 [g2] "approve": U4-g2 | approval: Result: applied. Label stored for the evaluation set.
+PASS U4 g2 clean
+PASS U4: Replay resets the scenario
+PASS U5: variant button "ok" selects it
+PASS U5 [ok]: U5-ok
+PASS U5 ok clean
+PASS U5: Replay resets the scenario
+PASS U5: variant button "b14" selects it
+PASS U5 [b14] "approve": U5-b14 | approval: Result: applied (Bay 4). Label stored for the evaluation set
+PASS U5 b14 clean
+PASS U5: Replay resets the scenario
+PASS U5: variant button "b14" selects it
+PASS U5 [b14] {"edit":1}: U5-b14 | approval: Result: applied after edit (Bay 4). Label stored for the eva
+PASS U5 b14 clean
+PASS U5: Replay resets the scenario
+PASS U5: variant button "b1" selects it
+PASS U5 [b1] "approve": U5-b1 | approval: Result: applied (Bay 6). Label stored for the evaluation set
+PASS U5 b1 clean
+PASS U5: Replay resets the scenario
+PASS U5: variant button "b1" selects it
+PASS U5 [b1] "reject": U5-b1 | approval: Result: blocked. Label stored for the evaluation set.
+PASS U5 b1 clean
+PASS U5: Replay resets the scenario
+PASS U6: variant button "ok" selects it
+PASS U6 [ok]: U6-ok
+PASS U6 ok clean
+PASS U6: Replay resets the scenario
+PASS U6: variant button "tight" selects it
+PASS U6 [tight] "approve": U6-tight | approval: Result: applied (30 min). Label stored for the evaluation se
+PASS U6 tight clean
+PASS U6: Replay resets the scenario
+PASS U6: variant button "tight" selects it
+PASS U6 [tight] {"edit":25}: U6-tight | approval: Result: applied after edit (25 min). Label stored for the ev
+PASS U6 tight clean
+PASS U6: Replay resets the scenario
+PASS U6: variant button "tight" selects it
+PASS U6 [tight] "reject": U6-tight-blocked | approval: Result: blocked. Label stored for the evaluation set.
+PASS U6 tight clean
+PASS U6: Replay resets the scenario
+PASS U9 "reject": refused | approval: Result: blocked. Label stored for the evaluation set.
+PASS U9  clean
+PASS U9: Replay resets the scenario
+PASS U10 "approve": U10 | approval: Result: applied (unmapped_obstacle). Label stored for the ev
+PASS U10  clean
+PASS U10: Replay resets the scenario
+PASS U10 {"edit":2}: U10 | approval: Result: applied after edit (damaged_pallet). Label stored fo
+PASS U10  clean
+PASS U10: Replay resets the scenario
+PASS U10 "reject": U10 | approval: Result: blocked. Label stored for the evaluation set.
+PASS U10  clean
+PASS U10: Replay resets the scenario
+PASS U1 [fail]: edit 0.6 refused ("Refused: 0.6 is outside the allowed range: above 0 and at mo")
+PASS U1 [fail]: edit 0 refused ("Refused: 0 is outside the allowed range: above 0 and at most")
+PASS U4 [g1]: edit 10 refused ("Refused: 10 is outside the allowed range 25 to 40 % (scripte")
+PASS U6 [tight]: edit 90 refused ("Refused: 90 is outside the allowed range 20 to 40 min (scrip")
+PASS U5: a typed free-text instruction is parsed and checked
+PASS U5 free text
+PASS U5: an instruction with nothing valid takes the reject-proposal path (diagnose > propose > person > log)
+PASS Floor supervisor: Recover button on the stopped-robot list runs the pipeline
+PASS Field technician: triage list and technician response shown
+PASS Product and engineering: full RICE table and the six-month roadmap shown
+PASS U7: Correct opens the approval screen and stores the corrected cause
+PASS U7: 12 confirms/corrections raise confirmed causes to 60%
+PASS U7
+PASS U8: spare packs 0 -> 0 packs; robots fall back to the charger (2 so far)
+PASS U8: back to 0.3 per robot -> 2 packs at Warehouse A
+PASS U8
+PASS Next scenario walks U1 > U2 > U3 > U4 > U5 > U6 > U7 > U8 > U9 > U10 > voice
+PASS Next scenario chain
+PASS voice phrase 1 by clicks -> V-recovered: "Bot 5 is moving again. It took 4 minutes."
+PASS voice phrase 2 (yes) by clicks -> V-rerouted: "Done. Bot 5 is going to Bay 4 and all drop-offs now go to Bay 6."
+PASS voice phrase 2 (no) by clicks -> V-cancelled: "Cancelled. Nothing changed."
+PASS voice phrase 3 by clicks -> V-refused: "I can't do that. Someone has to be at the robot and confirm the area is clear."
+PASS voice phrase 4 by clicks -> V-question: "Which robot, and which dock?"
+PASS voice phrase 4 follow-up: picking a stopped robot runs its recovery (V-refused)
+PASS voice scene
+PASS Game A: fixed cameras switch is greyed out
+PASS Game A: Reset restores defaults
+PASS Game A: Run a week + Skip -> scoreboard 16 rows; "On Warehouse A, battery swap raised the moving share from 67.2% to 77...."
+PASS Game A: Try another seed
+PASS Game A
+PASS Game B: fixed cameras switch is greyed out
+PASS Game B: Reset restores defaults
+PASS Game B: Run a week + Skip -> scoreboard 16 rows; "On Warehouse B, battery swap raised the moving share from 61.1% to 68...."
+PASS Game B: Try another seed
+PASS Game B
+PASS Game C: fixed cameras switch is greyed out
+PASS Game C: Reset restores defaults
+PASS Game C: Run a week + Skip -> scoreboard 16 rows; "On Warehouse C, battery swap raised the moving share from 68.4% to 76...."
+PASS Game C: Try another seed
+PASS Game C
+PASS Game: average of 20 runs
+PASS Roadmap: month tab 1
+PASS Roadmap: month tab 2
+PASS Roadmap: month tab 3
+PASS Roadmap: month tab 4
+PASS Roadmap: month tab 5
+PASS Roadmap: month tab 6
+PASS Roadmap: RICE sorts by every column both ways
+PASS Roadmap
+PASS Fleet overview: all 30 tiles clicked
+PASS How it works: box fix-diagnose explains itself
+PASS How it works: box fix-propose explains itself
+PASS How it works: box fix-check explains itself
+PASS How it works: box fix-execute explains itself
+PASS How it works: box fix-person explains itself
+PASS How it works: box fix-log explains itself
+PASS How it works: box plan-goal explains itself
+PASS How it works: box plan-model explains itself
+PASS How it works: box plan-check explains itself
+PASS How it works: box plan-person explains itself
+PASS How it works: box plan-run explains itself
+PASS How it works: box vis-capture explains itself
+PASS How it works: box vis-blur explains itself
+PASS How it works: box vis-model explains itself
+PASS How it works: box vis-person explains itself
+PASS How it works: box vis-eval explains itself
+PASS How it works: keyboard
+PASS Architecture
+PASS Evidence
+PASS Guided step 1
+PASS Guided step 2
+PASS Guided step 3
+PASS Guided step 4
+PASS Guided step 5
+PASS Guided step 6
+PASS Guided step 7
+PASS Guided step 8
+PASS Guided step 9
+PASS Guided step 10
+PASS Guided step 11
+PASS Guided step 12
+PASS Guided step 13
+PASS Guided step 14
+PASS Guided: Back goes to step 13
+PASS Guided: Leave to Explore pauses the story
+PASS Guided: Return resumes at the same step
+PASS Guided step 14: "explore" button
+PASS Guided step 14: "game" button
+PASS Guided step 14: "voice" button
+PASS Guided
+PASS Explore A run 25 s at 16x (16.1 h on the clock): 2 of 8 stopped now, 0 traffic stops in the log
+PASS Explore A long run
+PASS Explore B run 25 s at 16x (16.1 h on the clock): 2 of 17 stopped now, 0 traffic stops in the log
+PASS Explore B long run
+PASS Explore C run 25 s at 16x (16.6 h on the clock): 2 of 16 stopped now, 9 traffic stops in the log
+PASS Explore C long run
+PASS 1440x900: right panel fits the window and scrolls to its end on its own
+PASS 1440x900: the whole map stays in view while the right panel scrolls (map top 222 px, under the banner at 145 px)
+PASS 1440x900: the event log sits under the map, inside the window
+PASS 1440x900: no horizontal scroll
+PASS 1280x800: right panel fits the window and scrolls to its end on its own
+PASS 1280x800: the whole map stays in view while the right panel scrolls (map top 222 px, under the banner at 145 px)
+PASS 1280x800: the event log sits under the map, inside the window
+PASS 1280x800: no horizontal scroll
+PASS 1024x768: right panel fits the window and scrolls to its end on its own
+PASS 1024x768: the whole map stays in view while the right panel scrolls (map top 256 px, under the banner at 179 px)
+PASS 1024x768: the event log sits under the map, inside the window
+PASS 1024x768: no horizontal scroll
+PASS 1440: game right panel fits the window (scrolls inside)
+PASS 1440: voice right panel fits the window (scrolls inside)
+PASS index.html#assets opens the gallery
+PASS gallery
+
+322 of 322 audit checks pass

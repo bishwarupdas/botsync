@@ -380,6 +380,16 @@
         });
         window.App.overlays.routes = routes;
       }
+      if (!cmds.length) {
+        return { title: 'U5 pipeline (nothing valid)', layout: 'fix', labels: { diagnose: ['Read the instruction', 'typed by a supervisor'] }, steps: [
+          { box: 'diagnose', status: 'INFO', 'in': 'typed instruction', out: '"' + raw + '"' },
+          { box: 'propose', status: 'FAIL', 'in': 'instruction + list of allowed commands', out: 'nothing valid: no robot or bay found\nschema check: FAIL -> reject proposal' },
+          { box: 'person', status: 'WAITING', 'in': 'rejected proposal', out: 'the supervisor is asked to retype',
+            approval: { key: 'U5-invalid', failed: 'The model produced no valid command: no robot or bay in "' + raw + '".', rule: 'typed command schema', why: 'Nothing moves on a guess; a person states what they meant.',
+              proposal: raw || '(empty)', alternative: 'Ask the supervisor to retype, for example: "reroute bot 5 to bay 4"', approveLabel: 'Ask to retype' },
+            branch: { approve: [{ box: 'log', status: 'INFO', 'in': 'retype requested', out: 'logged; no robot moved' }], reject: [{ box: 'log', status: 'INFO', 'in': 'dropped', out: 'blocked; no robot moved' }] } }],
+          result: { key: 'U5-invalid', cls: 'refused', html: '<strong class="state-stopped">Nothing valid.</strong> The schema check rejected the proposal; no robot moved.' } };
+      }
       var steps = [
         { box: 'diagnose', status: 'INFO', 'in': 'typed instruction', out: '"' + raw + '"', labelsNote: true },
         { box: 'propose', status: cmds.length ? 'PASS' : 'FAIL', 'in': 'instruction + list of allowed commands', out: cmds.length ? cmds.map(function (c) { return JSON.stringify(c); }).join('\n') + '\nschema check: PASS' : 'nothing valid: no robot or bay found' }
@@ -477,7 +487,7 @@
       }).join('');
       return '<p>12 incidents arrive marked "no confirmed cause" (the real share is ' + N(D.fleet.incidentsNoConfirmedCause, 'pct0') + ', Analysis 1).</p>' +
         '<div class="box"><strong>Confirmed causes: <span id="u7-pct">' + N({ v: D.assumed.confirmedCauseStart.v, src: SRC.a1 }, 'pct0') + '</span></strong> climbing toward ' + N(D.assumed.confirmedCauseTarget, 'pct0') + ' as you click (start ' + N(D.assumed.confirmedCauseStart, 'pct0') + ' is the complement of the 54%).</div>' +
-        '<table class="compact" id="u7-table"><thead><tr><th>where</th><th>code</th><th>likely cause ' + UI.tag('scripted') + '</th><th>evidence used</th><th class="n">conf.</th><th>engineer</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+        '<div id="u7-approval"></div><table class="compact" id="u7-table"><thead><tr><th>where</th><th>code</th><th>likely cause ' + UI.tag('scripted') + '</th><th>evidence used</th><th class="n">conf.</th><th>engineer</th></tr></thead><tbody>' + rows + '</tbody></table>' +
         '<p>Engineering hours saved: ' + N({ v: D.assumed.triageSaving.v * D.support.noFaultFoundEngHours.v, src: SRC.assumed }, 'f0', { suffix: ' h', noTag: true }) + ' (assumed ' + N(D.assumed.triageSaving, 'pct0', { noTag: true }) + ' of ' + N(D.support.noFaultFoundEngHours, 'int', { suffix: ' h' }) + ')' + UI.tag('assumed') + '.</p>' +
         '<p>No-fault-found: ' + N(D.support.noFaultFoundShare, 'pct2') + ' of tickets (' + N(D.support.noFaultFoundTickets, 'int') + ' of ' + N(D.support.tickets, 'int') + ') used ' + N(D.support.noFaultFoundEngHours, 'int') + ' of ' + N(D.support.engHoursAllTickets, 'f1') + ' engineering hours (Analysis 7).</p>';
     },
@@ -490,9 +500,17 @@
       root.addEventListener('click', function (e) {
         var c = e.target.closest('[data-tconfirm]'), k = e.target.closest('[data-tcorrect]');
         if (c) { var i = +c.dataset.tconfirm; self.state.done[i] = 'confirmed'; UI.click(1); c.parentNode.innerHTML = '<span class="state-ok">confirmed</span>'; upd(); }
-        if (k) { var j = +k.dataset.tcorrect; k.parentNode.innerHTML = '<select aria-label="corrected cause" data-tsel="' + j + '">' + CORRECTIONS.map(function (x) { return '<option>' + x + '</option>'; }).join('') + '</select> <button data-tsave="' + j + '">Save</button>'; }
-        var sv = e.target.closest('[data-tsave]');
-        if (sv) { var q = +sv.dataset.tsave, val = root.querySelector('[data-tsel="' + q + '"]').value; self.state.done[q] = 'corrected'; UI.click(1); sv.parentNode.innerHTML = '<span>corrected: ' + UI.esc(val) + '</span>'; upd(); }
+        if (k) {
+          var j = +k.dataset.tcorrect, t = TRIAGE[j], cell = k.parentNode, box = document.getElementById('u7-approval');
+          cell.innerHTML = '<span class="state-wait">correcting (below)</span>';
+          UI.approval(box, { key: 'U7', failed: 'The engineer disagrees with the suggested cause for ' + t.robot + ' (' + t.code + ').', rule: 'engineer confirmation', why: 'Only confirmed causes go into incidents.root_cause_confirmed and the evaluation set.',
+            proposal: 'cause := ' + t.cause + ' (' + t.conf.toFixed(2) + ')', offending: t.cause, alternative: 'cause := unknown; keep the incident open for an engineer to look at', altValue: 'unknown', approveLabel: 'Mark as unknown',
+            edit: { type: 'choice', label: 'corrected cause', choices: CORRECTIONS, rangeText: 'allowed causes: ' + CORRECTIONS.join(', ') } }, function (dec) {
+            if (dec.kind === 'reject') { cell.innerHTML = '<span>left unconfirmed</span>'; return; }
+            self.state.done[j] = 'corrected'; cell.innerHTML = '<span>corrected: ' + UI.esc(dec.value) + '</span>'; upd();
+          });
+          box.scrollIntoView({ block: 'nearest' });
+        }
       });
     },
     spec: function () {
@@ -509,6 +527,7 @@
     shows: 'Robots at 25% get a charged pack from a person at the swap bay instead of charging for 100 minutes. It works only if a charged pack is waiting.',
     setup: function () {
       window.App.forceSwapBay = true;
+      cur.restoreSwap = !window.App.policy.swap;   // leaving U8 puts the switch back the way it was
       if (!window.App.policy.swap) { window.App.policy.swap = true; S().policy.swap = true; UI.syncPacks(); }
       window.App.statsFrom = { t: S().t, cat: JSON.parse(JSON.stringify(S().m.cat)), sched: S().m.sched };
       var low = robot(4); if (low.state === 'idle' || low.state === 'moving') low.battery = Math.min(low.battery, 0.37);
@@ -519,7 +538,8 @@
       return '<div class="box"><h4>Policy</h4><div class="policy-row">' + UI.switchHtml('swap', 'Battery swap (person)', window.App.policy.swap) + '</div>' +
         UI.sliderHtml('swapTime', P.swapTime, window.App.params.swapTime, 'Swap time', UI.FMT.swapTime) + UI.sliderHtml('spares', P.spares, window.App.params.spares, 'Spare packs per robot', UI.FMT.spares) + UI.sliderHtml('operators', P.operators, window.App.params.operators, 'Operators at the swap bay', UI.FMT.operators) +
         '<h4>Live readout ' + UI.tag('simulated') + '</h4><div data-live="swapReadout">' + UI.swapReadout() + '</div>' +
-        '<p class="small">Move the spare-pack slider to 0: robots fall back to the charger and the flat-battery stops return.</p></div>' +
+        '<p class="small">Move the spare-pack slider to 0: robots fall back to the charger and the flat-battery stops return.</p>' +
+        '<p class="small">The six-step strip above the map lights each step of a swap as it happens; the total time follows the swap-time slider. Pack weight is not in the data; engineering has to confirm one operator can handle it.</p></div>' +
         '<div class="box"><h4>What the case targets</h4><p>Pilot charging share from about ' + N(A.targetChargingFrom, 'pct0') + ' to under ' + N(A.targetChargingShare, 'pct0') + '; emergency low-battery stops per robot from ' + N(c.byPattern['24x7'].stopsPerRobot, 'f2') + ' to under ' + N(A.targetStopsPerRobot, 'int') + ' (assumed targets).</p>' +
         '<p>Ceiling: about ' + N(c.ceilingIfEveryChargeBecameASwap24x7, 'int') + ' hours a month at the 24x7 sites if every charge became a swap (Analysis 4); a ceiling, not a forecast.</p></div>' +
         '<div class="box"><h4>Static facts (data)</h4><ul><li>24x7 sites charge ' + N(c.byPattern['24x7'].share, 'pct1') + ' of scheduled time vs ' + N(c.byPattern['16x7'].share, 'pct1') + ' at the 16-hour sites.</li><li>' + N(c.aboveThe16HourRate, 'int') + ' hours a month above the 16-hour rate.</li><li>' + N(c.byPattern['24x7'].stopsPerRobot, 'f2') + ' emergency stops per robot vs about ' + N(c.sixteenHourStopsPerRobotAbout, 'f2') + '.</li><li>' + N(c.weakPacks, 'int') + ' weak packs stop ' + N(c.lowBatteryStopsPerRobotWeak, 'f2') + ' vs ' + N(c.lowBatteryStopsPerRobotHealthy, 'f2') + ' per robot (Analysis 5).</li></ul></div>' +
@@ -569,6 +589,7 @@
   var cur = { id: null, variant: null, robot: null };
   function stopScenario() {
     var A = window.App; A.scenarioActive = false; A.forceSwapBay = false; A.pipelineRunning = false;
+    if (cur.restoreSwap) { cur.restoreSwap = false; A.policy.swap = false; if (A.live) { A.live.policy.swap = false; } }
     if (A.live) { A.overlays.routes = []; A.overlays.objects = []; A.overlays.closed = {}; A.live.closed = A.overlays.closed; A.live.redirectDrop = null; A.live.robots.forEach(function (r) { r.hold = false; r.waitPerson = false; if (r.incident && r.incident.scripted) { r.incident.holdForUser = false; r.timer = 0.01; } }); }
     cur.id = null;
   }
