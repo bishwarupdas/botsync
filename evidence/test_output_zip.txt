@@ -1,0 +1,57 @@
+=== Test 16: Zip test
+zip size: 116926 bytes (0.11 MB)
+  PASS zip is under 5 MB
+unzipped into a new folder: /tmp/claude-0/-home-user-botsync/14ddc1e3-84a5-55d5-b752-3bb23129f809/scratchpad/fresh_unzip.KQLnpq
+Archive:  botsync_walkthrough.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+        0  2026-10-30 09:50   botsync_walkthrough/
+        0  2026-10-30 09:50   botsync_walkthrough/assets/
+        0  2026-10-30 09:50   botsync_walkthrough/assets/img/
+      524  2026-10-30 09:50   botsync_walkthrough/assets/img/favicon.svg
+        0  2026-10-30 10:25   botsync_walkthrough/assets/css/
+    17560  2026-10-30 10:25   botsync_walkthrough/assets/css/style.css
+        0  2026-10-30 10:28   botsync_walkthrough/assets/js/
+    33957  2026-10-30 10:50   botsync_walkthrough/assets/js/sim.js
+   117761  2026-10-30 10:36   botsync_walkthrough/assets/js/ui.js
+    17252  2026-10-30 10:24   botsync_walkthrough/assets/js/game.js
+    73407  2026-10-30 10:29   botsync_walkthrough/assets/js/scenarios.js
+    42738  2026-10-30 10:36   botsync_walkthrough/assets/js/draw.js
+   108232  2026-10-30 10:08   botsync_walkthrough/assets/js/data.js
+    15046  2026-10-30 10:29   botsync_walkthrough/assets/js/voice.js
+     9680  2026-10-30 10:33   botsync_walkthrough/assets/js/warehouses.js
+     4596  2026-10-30 10:20   botsync_walkthrough/index.html
+      215  2026-10-30 09:50   botsync_walkthrough/README.txt
+---------                     -------
+   440968                     17 files
+
+=== Test 1: Opens clean (fresh unzip)
+  PASS console errors/warnings: 0 []
+  PASS failed requests: 0
+  PASS page errors: 0 []
+
+=== Test 2: No external requests (fresh unzip)
+  PASS 10 requests, all file:// (0 other)
+
+=== Test 3: No setup (fresh unzip)
+  PASS no node_modules or package.json among 12 files
+  PASS index.html references only relative assets/ paths: assets/img/favicon.svg, assets/css/style.css, assets/js/data.js, assets/js/draw.js, assets/js/warehouses.js, assets/js/sim.js, assets/js/scenarios.js, assets/js/ui.js, assets/js/game.js, assets/js/voice.js
+  PASS no modules, fetch, XHR, workers or http(s) URLs in the page
+  PASS no Math.random() in sim.js or draw.js
+  PASS no speech recognition or microphone API
+
+=== Test 6: Incident flow (fresh unzip)
+  PASS "Trigger a stop" stopped Bot 7
+  PASS clicking the red robot on the map opens the incident panel
+  PASS camera view drawn with the VLM label "dirty_sensor"
+  PASS boxes lit in order: diagnose -> propose -> check -> execute -> log (observed live: diagnose -> propose -> check -> execute -> log)
+  PASS flow starts at Fault diagnosis and ends at Log back
+  PASS result shown: "PASS. Recovered. Agent path 4.0 min (auto median, incidents tab) vs Today: 21.2 min (median for operator clear"
+  PASS robot returned to moving (state now: moving)
+
+==== SUMMARY ====
+Test  1 PASS  Opens clean (fresh unzip)  (3 checks)
+Test  2 PASS  No external requests (fresh unzip)  (1 checks)
+Test  3 PASS  No setup (fresh unzip)  (5 checks)
+Test  6 PASS  Incident flow (fresh unzip)  (7 checks)
+4 of 4 tests pass

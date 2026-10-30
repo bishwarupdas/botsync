@@ -124,7 +124,8 @@
     var cz = wh.chargers[0];
     Draw.text(ctx, 'Charger zone', cz.x - 20, cz.y, 12, zo, { align: 'right' });
     Draw.text(ctx, '(assumed count)', cz.x - 20, cz.y - 14 / zoom, 12, zo, { align: 'right' });
-    Draw.drawServiceBay(ctx, wh.serviceBay.x, wh.serviceBay.y, 0, 'default', zo);
+    Draw.drawServiceBay(ctx, wh.serviceBay.x, wh.serviceBay.y, 0, 'default', { zoom: zoom, caption: false });
+    Draw.text(ctx, 'Service bay', wh.W - 6, wh.serviceBay.y + 24, 12, zo, { align: 'right' });
     if (o.swapBay) Draw.drawSwapBay(ctx, wh.swapBay.x, wh.swapBay.y, 0, 'on', { slots: o.swapSlots || [], operatorBusy: o.operatorBusy, armAngle: o.armAngle, zoom: zoom });
   }
 

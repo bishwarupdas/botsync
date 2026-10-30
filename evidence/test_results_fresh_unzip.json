@@ -1,0 +1,46 @@
+[
+ {
+  "n": 1,
+  "name": "Opens clean (fresh unzip)",
+  "checks": [
+   "PASS console errors/warnings: 0 []",
+   "PASS failed requests: 0",
+   "PASS page errors: 0 []"
+  ],
+  "pass": true
+ },
+ {
+  "n": 2,
+  "name": "No external requests (fresh unzip)",
+  "checks": [
+   "PASS 10 requests, all file:// (0 other)"
+  ],
+  "pass": true
+ },
+ {
+  "n": 3,
+  "name": "No setup (fresh unzip)",
+  "checks": [
+   "PASS no node_modules or package.json among 12 files",
+   "PASS index.html references only relative assets/ paths: assets/img/favicon.svg, assets/css/style.css, assets/js/data.js, assets/js/draw.js, assets/js/warehouses.js, assets/js/sim.js, assets/js/scenarios.js, assets/js/ui.js, assets/js/game.js, assets/js/voice.js",
+   "PASS no modules, fetch, XHR, workers or http(s) URLs in the page",
+   "PASS no Math.random() in sim.js or draw.js",
+   "PASS no speech recognition or microphone API"
+  ],
+  "pass": true
+ },
+ {
+  "n": 6,
+  "name": "Incident flow (fresh unzip)",
+  "checks": [
+   "PASS \"Trigger a stop\" stopped Bot 7",
+   "PASS clicking the red robot on the map opens the incident panel",
+   "PASS camera view drawn with the VLM label \"dirty_sensor\"",
+   "PASS boxes lit in order: diagnose -> propose -> check -> execute -> log (observed live: diagnose -> propose -> check -> execute -> log)",
+   "PASS flow starts at Fault diagnosis and ends at Log back",
+   "PASS result shown: \"PASS. Recovered. Agent path 4.0 min (auto median, incidents tab) vs Today: 21.2 min (median for operator clear\"",
+   "PASS robot returned to moving (state now: moving)"
+  ],
+  "pass": true
+ }
+]

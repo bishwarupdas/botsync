@@ -1,6 +1,6 @@
 /* draw.js: every drawn asset (spec section 7A). Canvas functions have the signature
    drawX(ctx, x, y, angleRad, state, opts). SVG and HTML builders return strings.
-   No Math.random(): jitter comes from the seeded PRNG below. */
+   No unseeded random numbers: jitter comes from the seeded PRNG below. */
 (function () {
   'use strict';
 
@@ -540,7 +540,7 @@
 
   /* ---------- A8. Charts and meters ---------- */
   var TIME_PATTERNS = ['moving', 'charging', 'idle', 'stopped'];
-  function svgDefs() {
+  function defsSvg() {
     return '<defs>' +
       '<pattern id="pat-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#fff"/><line x1="0" y1="0" x2="0" y2="6" stroke="#000" stroke-width="2"/></pattern>' +
       '<pattern id="pat-redx" width="7" height="7" patternUnits="userSpaceOnUse"><rect width="7" height="7" fill="#fff"/><path d="M0 0 L7 7 M7 0 L0 7" stroke="' + C.red + '" stroke-width="1.2"/></pattern>' +
@@ -549,7 +549,7 @@
   function patFill(kind) { return { moving: '#000', charging: 'url(#pat-hatch)', idle: C.light, stopped: 'url(#pat-redx)', other: '#fff' }[kind]; }
   function svgTimeShareBar(o) {
     // o: {segments:[{kind,label,frac,text}], width, height}
-    var W = o.width || 600, H = o.height || 26, x = 0, s = '<svg class="timeshare" viewBox="0 0 ' + W + ' ' + (H + 26) + '" width="100%" role="img" aria-label="' + esc(o.aria || 'time share bar') + '">' + svgDefs();
+    var W = o.width || 600, H = o.height || 26, x = 0, s = '<svg class="timeshare" viewBox="0 0 ' + W + ' ' + (H + 26) + '" width="100%" role="img" aria-label="' + esc(o.aria || 'time share bar') + '">' + defsSvg();
     o.segments.forEach(function (g) {
       var w = Math.max(0, g.frac * W);
       s += '<rect x="' + x + '" y="0" width="' + w + '" height="' + H + '" fill="' + patFill(g.kind) + '" stroke="#000" stroke-width="1"/>';
@@ -561,7 +561,7 @@
     return s + '</svg>';
   }
   function svgLegendSwatch(kind) {
-    return '<svg width="22" height="14" aria-hidden="true">' + svgDefs() + '<rect x="0.5" y="0.5" width="21" height="13" fill="' + patFill(kind) + '" stroke="#000"/></svg>';
+    return '<svg class="swatch" width="22" height="14" aria-hidden="true">' + defsSvg() + '<rect x="0.5" y="0.5" width="21" height="13" fill="' + patFill(kind) + '" stroke="#000"/></svg>';
   }
   function svgComparisonBars(rows, opts) {
     // rows: [{label, a, b, fmt, aText, bText, diffText}] a = Today (outline), b = Your policy (solid)
@@ -643,7 +643,7 @@
   /* The list of asset functions (checked by acceptance test 18 against section 7A) */
   var Draw = {
     CONFIG: CONFIG, COLORS: C, mulberry32: mulberry32, ROBOT_STATES: ROBOT_STATES, PALLET_VARIANTS: PALLET_VARIANTS,
-    CAMERA_SCENES: CAMERA_SCENES, TIME_PATTERNS: TIME_PATTERNS, esc: esc, text: text, hatch: hatch, svgDefs: svgDefs,
+    CAMERA_SCENES: CAMERA_SCENES, TIME_PATTERNS: TIME_PATTERNS, esc: esc, text: text, hatch: hatch, defsSvg: defsSvg,
     // A1
     drawRobot: drawRobot, drawBatteryBar: drawBatteryBar,
     // A2

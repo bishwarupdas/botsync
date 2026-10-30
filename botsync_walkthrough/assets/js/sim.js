@@ -1,5 +1,5 @@
 /* sim.js: one simulation engine for Explore (demo speed, traffic by mechanism) and Game (calibrated incidents).
-   Deterministic given a seed: every random draw comes from mulberry32 streams. Math.random() is never used.
+   Deterministic given a seed: every random draw comes from mulberry32 streams. no unseeded random number calls are used.
    Time unit: simulated minutes. */
 (function () {
   'use strict';
@@ -144,26 +144,12 @@
     return m >= sh.start && m < sh.end;
   }
 
-  /* 8.1d corridors (Explore only): the stretch of aisle between two intersections. A robot may enter only if nobody is in it going the other way. */
+  /* 8.1d traffic (Explore only): each aisle segment (edge between two waypoints) takes robots in one direction at a time.
+     A robot waiting at a waypoint holds nothing. A segment with a robot waiting to enter from the other side takes no new
+     robots in the current direction, so nobody waits for ever. A wait over 60 simulated seconds raises a stop. */
   function buildCorridors(S) {
-    var wh = S.wh, cor = {}, id = 0;
-    function walk(a, b) {
-      var seq = [a, b], prev = a, cur = b;
-      while (wh.nodes[cur].kind !== 'cross') {
-        var nx = null; wh.adj[cur].forEach(function (e) { if (e.to !== prev && sameLine(wh, prev, cur, e.to)) nx = e.to; });
-        if (nx == null) break; seq.push(nx); prev = cur; cur = nx;
-      }
-      return seq;
-    }
-    wh.nodes.forEach(function (n) {
-      if (n.kind !== 'cross') return;
-      wh.adj[n.id].forEach(function (e) {
-        var seq = walk(n.id, e.to), key = wh.edgeKey(seq[0], seq[1]);
-        if (cor[key]) return;
-        var c = { id: id++, nodes: seq, users: [], dir: 0 };
-        for (var i = 1; i < seq.length; i++) cor[wh.edgeKey(seq[i - 1], seq[i])] = { c: c, fwd: [seq[i - 1], seq[i]] };
-      });
-    });
+    var wh = S.wh, cor = {};
+    wh.adj.forEach(function (list, a) { list.forEach(function (e) { var k = wh.edgeKey(a, e.to); if (!cor[k]) cor[k] = { c: { id: k, users: [], dir: 0, reserve: 0 }, fwd: a < e.to ? [a, e.to] : [e.to, a] }; }); });
     S.corridors = cor;
   }
   function sameLine(wh, a, b, c) { var A1 = wh.nodes[a], B = wh.nodes[b], Cn = wh.nodes[c]; return (Math.abs(A1.x - B.x) < 0.6 && Math.abs(B.x - Cn.x) < 0.6) || (Math.abs(A1.y - B.y) < 0.6 && Math.abs(B.y - Cn.y) < 0.6); }
@@ -230,7 +216,7 @@
       else { inc.down = RECOVERY.auto.median.v + A.approvalWaitMin.v; inc.handledBy = 'agent+click'; m.humanClicks++; }
       m.agentHandled++; if (inc.recov === 'operator') m.walkUpsAvoided++;
     }
-    if (inc.handledBy === 'operator') m.walkUps++;
+    if (inc.handledBy === 'operator' && S.mode !== 'explore') m.walkUps++;   // Explore counts the walk-up when it happens (ui.js)
     m.incidents[inc.code] = (m.incidents[inc.code] || 0) + 1; m.totalInc++;
     if (inc.code === 'ERR_BATTERY_LOW_CRITICAL') m.emergency++;
     m.downtimeMin += inc.down;
@@ -239,6 +225,7 @@
     if (conf || (S.policy.triage && inc.uTriage < (A.confirmedCauseTarget.v - A.confirmedCauseStart.v) / (1 - A.confirmedCauseStart.v))) m.confirmed++;
     r.resume = resume || r.state; r.incident = inc; r.lastIncident = inc; r.state = 'stopped'; r.timer = inc.down;
     if (r.corridor) leaveCorridor(S, r);
+    dropReserve(S, r); r.waitingFor = null; r.wait = 0;
     if (S.mode === 'explore') r.timer = inc.holdForUser ? Infinity : inc.down;
     log(S, r, inc.code, 'stopped' + (inc.station ? ' at ' + inc.station : ''), { kind: 'stop' });
   }
@@ -255,14 +242,18 @@
   }
 
   /* corridor bookkeeping (Explore) */
+  function dropReserve(S, r) { if (!S.corridors) return; var c = r.waitingFor; if (c && c.reserveBy === r.i) { c.reserve = 0; c.reserveBy = null; } }
   function leaveCorridor(S, r) { var c = r.corridor; if (!c) return; var k = c.users.indexOf(r.i); if (k >= 0) c.users.splice(k, 1); if (!c.users.length) c.dir = 0; r.corridor = null; }
   function tryEnter(S, r, a, b) {
     if (!S.corridors) return true;
-    var cd = corridorDir(S, a, b);
-    if (r.corridor === cd.c) return true;
-    if (cd.c.users.length && cd.c.dir !== cd.dir) return false;
+    var cd = corridorDir(S, a, b), c = cd.c;
+    if (r.corridor === c) return true;
+    if (c.reserve && (c.reserveBy == null || S.robots[c.reserveBy].waitingFor !== c)) { c.reserve = 0; c.reserveBy = null; }   // stale: that robot is no longer waiting here
+    var blocked = (c.users.length && c.dir !== cd.dir) || (c.reserve && c.reserve !== cd.dir && c.reserveBy !== r.i);
+    if (blocked) { if (!c.reserve && c.users.length) { c.reserve = cd.dir; c.reserveBy = r.i; } return false; }
     if (r.corridor) leaveCorridor(S, r);
-    cd.c.users.push(r.i); cd.c.dir = cd.dir; r.corridor = cd.c; return true;
+    if (c.reserveBy === r.i) { c.reserve = 0; c.reserveBy = null; }
+    c.users.push(r.i); c.dir = cd.dir; r.corridor = c; return true;
   }
 
   /* move along the path by up to dt minutes; returns minutes used */
@@ -272,7 +263,7 @@
       var a = r.path[r.seg], b = r.path[r.seg + 1];
       if (r.pos === 0 && !tryEnter(S, r, a, b)) {
         // blocked head-on: try a route around, else wait (counts toward the 60-second deadlock rule)
-        if (!r.triedReplan) { r.triedReplan = true; if (replanAround(S, r)) continue; }
+        if (!r.triedReplan) { r.triedReplan = true; if (replanAround(S, r)) { dropReserve(S, r); r.waitingFor = null; continue; } }
         var w = dt - used; r.wait += w; S.m.waitMin += w; r.waitingFor = corridorDir(S, a, b).c;
         return dt;
       }
@@ -280,7 +271,7 @@
       var na = wh.nodes[a], nb = wh.nodes[b], len = Math.max(0.01, Math.hypot(nb.x - na.x, nb.y - na.y));
       var can = (dt - used) * DRIVE_PX_PER_MIN, left = len - r.pos;
       r.angle = Math.atan2(nb.y - na.y, nb.x - na.x);
-      if (can >= left) { used += left / DRIVE_PX_PER_MIN; r.seg++; r.pos = 0; r.node = b; r.x = nb.x; r.y = nb.y; }
+      if (can >= left) { used += left / DRIVE_PX_PER_MIN; r.seg++; r.pos = 0; r.node = b; r.x = nb.x; r.y = nb.y; if (r.corridor) leaveCorridor(S, r); }
       else { r.pos += can; used = dt; r.x = na.x + (nb.x - na.x) * r.pos / len; r.y = na.y + (nb.y - na.y) * r.pos / len; }
     }
     if (r.path && r.seg >= r.path.length - 1) { r.path = null; if (r.corridor && S.corridors) leaveCorridor(S, r); return -used - 1e-9; }  // arrived
@@ -376,8 +367,10 @@
   }
   function trafficIncident(S, r) {
     // a cycle of waiting robots is gridlock; a single long wait is a deadlock
+    // gridlock: the robot it waits for is itself waiting (a multi-robot wait chain); otherwise a deadlock
     var c = r.waitingFor, cycle = false;
-    if (c) c.users.forEach(function (j) { var o = S.robots[j]; if (o.waitingFor && o.waitingFor === r.corridor) cycle = true; });
+    if (c) c.users.forEach(function (j) { var o = S.robots[j]; if (o.waitingFor || o.wait > 0) cycle = true; });
+    if (c && c.reserveBy === r.i) { c.reserve = 0; c.reserveBy = null; }
     var code = cycle ? 'ERR_INTERSECTION_GRIDLOCK_TIMEOUT' : 'ERR_PATH_PLANNING_DEADLOCK';
     var rng = r.rngC, recov = pickWeighted(rng, Object.keys(S.wh.siteRow.recoveryTypes).map(function (k) { return [k, S.wh.siteRow.recoveryTypes[k].v]; }));
     if (recov === 'tech') recov = 'operator';
