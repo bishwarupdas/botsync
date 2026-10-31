@@ -1,6 +1,10 @@
 # Botsync case: interactive fleet walkthrough
 
-## Open it (no install, works offline)
+## Open it in the browser
+
+**https://bishwarupdas.github.io/botsync/** (nothing to download)
+
+## Or download it (no install, works offline)
 
 ```bash
 git clone https://github.com/bishwarupdas/botsync.git
