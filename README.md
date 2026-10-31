@@ -3,7 +3,7 @@
 ## Open it (no install, works offline)
 
 ```bash
-git clone -b walkthrough-build https://github.com/bishwarupdas/botsync.git
+git clone https://github.com/bishwarupdas/botsync.git
 ```
 
 Then open the folder `botsync/botsync_walkthrough/` and double-click **`index.html`**. It opens in Chrome, Edge, Firefox or Safari. Nothing to install, no server, no internet needed.
